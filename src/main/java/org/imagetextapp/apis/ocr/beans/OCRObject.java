@@ -5,6 +5,7 @@ public class OCRObject {
     private int textOrientation = 0;
     private int fileParseExitCode = 1;
     private String parsedText = "";
+    private String parsedTextClean = "";
     private String errorMessage = "";
     private String errorDetails = "";
 
@@ -34,6 +35,14 @@ public class OCRObject {
 
     public void setParsedText(String parsedText) {
         this.parsedText = parsedText;
+    }
+
+    public String getParsedTextClean() {
+        return parsedTextClean;
+    }
+
+    public void setParsedTextClean(String parsedTextClean) {
+        this.parsedTextClean = parsedTextClean;
     }
 
     public String getErrorMessage() {
@@ -74,5 +83,20 @@ public class OCRObject {
 
     public void setProcessingTime(int processingTime) {
         this.processingTime = processingTime;
+    }
+
+    @Override
+    public String toString() {
+        return "OCRObject{" +
+                "textOrientation=" + textOrientation + '\n' +
+                ", fileParseExitCode=" + fileParseExitCode + '\n' +
+                ", parsedText='" + parsedText + '\n' +
+                ", parsedTextClean='" + parsedTextClean + '\n' +
+                ", errorMessage='" + errorMessage + '\n' +
+                ", errorDetails='" + errorDetails + '\n' +
+                ", ocrExitCode=" + ocrExitCode + '\n' +
+                ", errorOnProcessing=" + errorOnProcessing + '\n' +
+                ", processingTime=" + processingTime + '\n' +
+                '}';
     }
 }

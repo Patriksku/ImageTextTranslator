@@ -3,6 +3,7 @@ package org.imagetextapp.apis.ocr;
 import org.imagetextapp.PropertiesReader;
 import org.imagetextapp.apis.ocr.beans.OCRObject;
 import org.imagetextapp.apis.tools.MultiPartBody;
+import org.imagetextapp.apis.tools.StringManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -26,7 +27,29 @@ public class OCRHandler {
 
         HttpResponse<String> response = makeRequest(multiPartBody);
 
-        if (response != null && response.statusCode() == 200) {
+        System.out.println(response.body());
+
+        if (response.statusCode() == 200) {
+            parseJsonToObject(response);
+
+        } else {
+            System.out.println("Something went wrong while trying to process the file. Make sure it " +
+                    "is an image!");
+        }
+    }
+
+    public void uploadURLImage(String urlFile, String language) {
+        MultiPartBody multiPartBody = new MultiPartBody()
+                .addPart("url", urlFile)
+                .addPart("language", language)
+                .addPart("detectOrientation", "true")
+                .addPart("scale", "true");
+
+        HttpResponse<String> response = makeRequest(multiPartBody);
+
+        System.out.println(response.body());
+
+        if (response.statusCode() == 200) {
             parseJsonToObject(response);
 
         } else {
@@ -36,29 +59,49 @@ public class OCRHandler {
     }
 
     private void parseJsonToObject(HttpResponse<String> response) {
+        StringManager stringManager = new StringManager();
         OCRObject jsonToOCR = new OCRObject();
 
         String jsonString = response.body();
-        JSONObject jsonObject = new JSONObject(jsonString);
-        JSONArray jsonArray = jsonObject.getJSONArray("ParsedResults");
+        JSONObject parsedResObject = new JSONObject(jsonString);
 
-        System.out.println("PRE LOOP");
-        System.out.println("TextOrientation: " + jsonArray.getJSONObject(0).getString("TextOrientation"));
-        System.out.println("FileParseExitCode: " + jsonArray.getJSONObject(0).getInt("FileParseExitCode"));
-        System.out.println("-------------");
+        // If server indicates that an error occurred, print errorMessage.
+        if (parsedResObject.getBoolean("IsErroredOnProcessing")) {
+            System.out.println("An error occurred while trying to proccess your request. Description: ");
 
-        for (int i = 0; i < jsonArray.length(); i++) {
-            String item = jsonArray.getJSONObject(i).toString();
-            System.out.println("SIZE: " + jsonArray.length());
-            System.out.println("ITEM: " + item);
-            System.out.println("-------");
-            System.out.println("TextOrientation: " + jsonArray.getJSONObject(i).getString("TextOrientation"));
-            System.out.println("FileParseExitCode: " + jsonArray.getJSONObject(i).getInt("FileParseExitCode"));
-//            System.out.println("ParsedText: " + jsonArray.getJSONObject(i).getString("ParsedText"));
-            if (item.equals("TextOrientation")) {
-                System.out.println("hej");
-            }
+            JSONArray errorArray = parsedResObject.getJSONArray("ErrorMessage");
+            System.out.println(errorArray.getString(0));
         }
+        // Else proceed as normal.
+        else {
+            JSONArray parsedResArray = parsedResObject.getJSONArray("ParsedResults");
+
+            // Set values from returned "ParsedResults" array from response.
+            jsonToOCR.setTextOrientation(parsedResArray.getJSONObject(0).getInt("TextOrientation"));
+            jsonToOCR.setFileParseExitCode(parsedResArray.getJSONObject(0).getInt("FileParseExitCode"));
+            jsonToOCR.setParsedText(parsedResArray.getJSONObject(0).getString("ParsedText"));
+            jsonToOCR.setParsedTextClean(stringManager.getCleanString(jsonToOCR.getParsedText()));
+            jsonToOCR.setErrorMessage(parsedResArray.getJSONObject(0).getString("ErrorMessage"));
+            jsonToOCR.setErrorDetails(parsedResArray.getJSONObject(0).getString("ErrorDetails"));
+
+            // Set values from returned parameters from response body.
+            jsonToOCR.setOcrExitCode(parsedResObject.getInt("OCRExitCode"));
+            jsonToOCR.setErrorOnProcessing(parsedResObject.getBoolean("IsErroredOnProcessing"));
+            jsonToOCR.setProcessingTime(parsedResObject.getInt("ProcessingTimeInMilliseconds"));
+
+            this.ocrObject = jsonToOCR;
+
+            // Contents of ocrObject
+            System.out.println(this.ocrObject);
+        }
+    }
+
+    public OCRObject getOcrObject() {
+        if (ocrObject != null) {
+            return this.ocrObject;
+        }
+        System.out.println("ocrObject is null (not instantiated) but was returned anyways.");
+        return this.ocrObject;
     }
 
     private HttpResponse<String> makeRequest(MultiPartBody multiPartBody) {
