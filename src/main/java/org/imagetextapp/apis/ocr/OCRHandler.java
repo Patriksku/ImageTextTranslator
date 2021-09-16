@@ -1,6 +1,6 @@
 package org.imagetextapp.apis.ocr;
 
-import org.imagetextapp.PropertiesReader;
+import org.imagetextapp.apis.tools.PropertiesReader;
 import org.imagetextapp.apis.ocr.beans.OCRObject;
 import org.imagetextapp.apis.tools.MultiPartBody;
 import org.imagetextapp.apis.tools.StringManager;
@@ -18,12 +18,24 @@ public class OCRHandler {
 
     private OCRObject ocrObject;
 
-    public void uploadLocalImage(Path localFile, String language) {
-        MultiPartBody multiPartBody = new MultiPartBody()
-                .addPart("file", localFile)
-                .addPart("language", language)
-                .addPart("detectOrientation", "true")
-                .addPart("scale", "true");
+    public void uploadLocalImage(Path localFile, String language, boolean identifyLanguage) {
+        MultiPartBody multiPartBody;
+
+        if (identifyLanguage) {
+            multiPartBody = new MultiPartBody()
+                    .addPart("file", localFile)
+                    .addPart("language", language)
+                    .addPart("detectOrientation", "true")
+                    .addPart("scale", "true")
+                    .addPart("OCREngine", "2");
+
+        } else {
+            multiPartBody = new MultiPartBody()
+                    .addPart("file", localFile)
+                    .addPart("language", language)
+                    .addPart("detectOrientation", "true")
+                    .addPart("scale", "true");
+        }
 
         HttpResponse<String> response = makeRequest(multiPartBody);
 
@@ -38,12 +50,24 @@ public class OCRHandler {
         }
     }
 
-    public void uploadURLImage(String urlFile, String language) {
-        MultiPartBody multiPartBody = new MultiPartBody()
-                .addPart("url", urlFile)
-                .addPart("language", language)
-                .addPart("detectOrientation", "true")
-                .addPart("scale", "true");
+    public void uploadURLImage(String urlFile, String language, boolean identifyLanguage) {
+        MultiPartBody multiPartBody;
+
+        if (identifyLanguage) {
+            multiPartBody = new MultiPartBody()
+                    .addPart("url", urlFile)
+                    .addPart("language", language)
+                    .addPart("detectOrientation", "true")
+                    .addPart("scale", "true")
+                    .addPart("OCREngine", "2");
+
+        } else {
+            multiPartBody = new MultiPartBody()
+                    .addPart("url", urlFile)
+                    .addPart("language", language)
+                    .addPart("detectOrientation", "true")
+                    .addPart("scale", "true");
+        }
 
         HttpResponse<String> response = makeRequest(multiPartBody);
 

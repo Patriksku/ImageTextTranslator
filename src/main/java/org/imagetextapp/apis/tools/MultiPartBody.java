@@ -1,15 +1,13 @@
 package org.imagetextapp.apis.tools;
 
-import org.imagetextapp.PropertiesReader;
+import org.imagetextapp.apis.DetectLanguageHandler;
 import org.imagetextapp.apis.ocr.OCRHandler;
+import org.imagetextapp.apis.ocr.beans.OCRObject;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -171,7 +169,7 @@ public class MultiPartBody {
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
 
         Path localFile = Paths.get("C:\\Users\\fourseven\\Desktop\\notes\\Java\\projects\\bookpage.jpg");
         String urlFile = "https://marketplace.canva.com/EAEjCdGx_iA/1/0/1131w/canva-pizza-menu-LjjRAs0R_8A.jpg";
@@ -181,30 +179,20 @@ public class MultiPartBody {
 
         Path largeLocalFile = Paths.get("C:\\Users\\fourseven\\Desktop\\notes\\Java\\projects\\large.png");
         String largeUrlFile = "https://i.redd.it/e440eaxet2f11.png";
+
         String OCR_URL = "https://api.ocr.space/parse/image";
+        String DETECT_LANGUAGE_URL = "https://ws.detectlanguage.com/0.2/detect";
+
+
+//        System.getProperty("\njava.class.path");
 
         OCRHandler ocrHandler = new OCRHandler();
-        ocrHandler.uploadURLImage(wrongUrl, "eng");
-//        ocrHandler.uploadURLImage(largeUrlFile, "eng");
+        ocrHandler.uploadLocalImage(localFile, "eng", false);
+        OCRObject ocrObject = ocrHandler.getOcrObject();
 
-//        MultiPartBody multiPartBody = new MultiPartBody()
-//                .addPart("file", localFile)
-//                .addPart("language", "eng")
-//                .addPart("detectOrientation", "true")
-//                .addPart("scale", "true");
-//
-//        HttpClient client = HttpClient.newHttpClient();
-//
-//        HttpRequest request = HttpRequest.newBuilder()
-//                .header("Content-Type", "multipart/form-data; boundary=" + multiPartBody.getBoundary())
-//                .header("apikey", PropertiesReader.getProperty("OCR_APIKEY"))
-//                .uri(URI.create(OCR_URL))
-//                .POST(multiPartBody.build())
-//                .build();
-//
-//        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-//
-//        System.out.println(response.statusCode());
-//        System.out.println(response.body());
+        DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
+
+        System.out.println("Detecting language with clean String: \n");
+        detectLanguageHandler.identifyLanguage(ocrObject.getParsedTextClean());
     }
 }
