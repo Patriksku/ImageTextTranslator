@@ -1,4 +1,4 @@
-package org.imagetextapp;
+package org.imagetextapp.apis.tools;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
