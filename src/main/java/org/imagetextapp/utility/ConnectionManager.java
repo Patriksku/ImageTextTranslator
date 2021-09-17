@@ -1,4 +1,4 @@
-package org.imagetextapp.apis.utility;
+package org.imagetextapp.utility;
 
 import java.io.IOException;
 import java.net.URI;
@@ -62,6 +62,37 @@ public class ConnectionManager {
 
         } catch (IOException | InterruptedException e) {
             System.out.println("An error occurred while trying to make a DetectLanguage request.");
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    /**
+     *
+     * @param query text together with required fields for the Translate API.
+     * @return response from the Translate API.
+     */
+    public HttpResponse<String> makeTranslateRequest(String query) {
+        final String TRANSLATE_URL = "https://google-translate1.p.rapidapi.com/language/translate/v2";
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = null;
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Encoding", "application/gzip")
+                .header("x-rapidapi-key", PropertiesReader.getProperty("X-RAPIDAPI-KEY"))
+                .header("x-rapidapi-host", PropertiesReader.getProperty("X-RAPIDAPI-HOST"))
+                .header("useQueryString", "true")
+                .uri(URI.create(TRANSLATE_URL))
+                .POST(HttpRequest.BodyPublishers.ofString(query))
+                .build();
+
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("An error occurred while trying to make an OCR request.");
             e.printStackTrace();
         }
         return response;

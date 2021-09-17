@@ -1,4 +1,4 @@
-package org.imagetextapp.apis.utility;
+package org.imagetextapp.utility;
 
 import org.imagetextapp.apis.detectlanguage.DetectLanguageObject;
 import org.imagetextapp.apis.ocr.OCRObject;
@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import java.net.http.HttpResponse;
 
 /**
- * Parses JSON responses from APIs to objects and returns them.
+ * Parses JSON responses from APIs and returns them.
  */
 public class JsonParser {
 
@@ -27,7 +27,7 @@ public class JsonParser {
         // If OCR server response indicates that an error occurred.
         if (parsedResObject.getBoolean("IsErroredOnProcessing")) {
 
-            System.out.println("An error occurred while trying to proccess the OCR request. Description: ");
+            System.out.println("An error occurred while trying to process the OCR request. Description: ");
             JSONArray errorArray = parsedResObject.getJSONArray("ErrorMessage");
             System.out.println(errorArray.getString(0));
 
@@ -69,7 +69,7 @@ public class JsonParser {
 
         // If Detect Language server response indicates that an error occurred.
         if (detectionsArray.isEmpty()) {
-            System.out.println("An error occurred while trying to proccess the Detect Language request.");
+            System.out.println("An error occurred while trying to process the Detect Language request.");
             jsonToDetectLanguage.setErrorOnProcessing(true);
         }
 
@@ -81,5 +81,26 @@ public class JsonParser {
         }
 
         return jsonToDetectLanguage;
+    }
+
+    /**
+     *
+     * @param response JSON response from Google Translate API.
+     * @return translated text.
+     */
+    public String parseTranslateResponse(HttpResponse<String> response) {
+        String jsonString = response.body();
+        JSONObject parsedResObject = new JSONObject(jsonString);
+        JSONObject dataObject = parsedResObject.getJSONObject("data");
+        JSONArray translationsArray = dataObject.getJSONArray("translations");
+
+        // If Translate server response indicates that an error occurred.
+        if (translationsArray.getJSONObject(0).getString("translatedText").equals("")) {
+            System.out.println("An error occurred while trying to process the Translate request.");
+            System.out.println("Make sure that the text is not empty.");
+            return "";
+        }
+
+        return translationsArray.getJSONObject(0).getString("translatedText");
     }
 }

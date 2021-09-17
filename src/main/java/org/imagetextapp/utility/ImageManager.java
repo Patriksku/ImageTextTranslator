@@ -1,4 +1,4 @@
-package org.imagetextapp.apis.utility;
+package org.imagetextapp.utility;
 
 import org.imgscalr.Scalr.*;
 import static org.imgscalr.Scalr.OP_ANTIALIAS;

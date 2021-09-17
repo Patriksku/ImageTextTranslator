@@ -1,6 +1,6 @@
 package org.imagetextapp.apis.ocr;
 
-import org.imagetextapp.apis.utility.*;
+import org.imagetextapp.utility.*;
 
 import java.net.http.HttpResponse;
 import java.nio.file.Path;

@@ -1,8 +1,9 @@
-package org.imagetextapp.apis.utility;
+package org.imagetextapp.utility;
 
 import org.imagetextapp.apis.detectlanguage.DetectLanguageHandler;
 import org.imagetextapp.apis.ocr.OCRHandler;
 import org.imagetextapp.apis.ocr.OCRObject;
+import org.imagetextapp.apis.translate.TranslateHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +17,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Builds a valid multipart/form-data encoded POST query which can be handled by Java's HttpClient.
+ * Builds a valid multipart/form-data POST query which can be handled by Java's HttpClient.
  * From: https://stackoverflow.com/questions/46392160/java-9-httpclient-send-a-multipart-form-data-request @ittupelo
  */
 public class MultiPartBody {
@@ -190,13 +191,16 @@ public class MultiPartBody {
 
 //        System.getProperty("\njava.class.path");
 
-        OCRHandler ocrHandler = new OCRHandler();
-        ocrHandler.uploadLocalImage(localFile, "eng", false);
-        OCRObject ocrObject = ocrHandler.getOcrObject();
+//        OCRHandler ocrHandler = new OCRHandler();
+//        ocrHandler.uploadLocalImage(localFile, "eng", false);
+//        OCRObject ocrObject = ocrHandler.getOcrObject();
+//
+//        DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
+//
+//        System.out.println("Detecting language with clean String: \n");
+//        detectLanguageHandler.identifyLanguage(ocrObject.getParsedTextClean());
 
-        DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
-
-        System.out.println("Detecting language with clean String: \n");
-        detectLanguageHandler.identifyLanguage(ocrObject.getParsedTextClean());
+        TranslateHandler translateHandler = new TranslateHandler();
+        translateHandler.translateText("Hello, world!", "es");
     }
 }

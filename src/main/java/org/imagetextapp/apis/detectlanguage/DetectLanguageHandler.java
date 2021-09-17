@@ -1,8 +1,8 @@
 package org.imagetextapp.apis.detectlanguage;
 
-import org.imagetextapp.apis.utility.ConnectionManager;
-import org.imagetextapp.apis.utility.JsonParser;
-import org.imagetextapp.apis.utility.StringManager;
+import org.imagetextapp.utility.ConnectionManager;
+import org.imagetextapp.utility.JsonParser;
+import org.imagetextapp.utility.StringManager;
 
 import java.net.http.HttpResponse;
 
@@ -14,6 +14,10 @@ public class DetectLanguageHandler {
 
     private DetectLanguageObject detectLanguageObject = new DetectLanguageObject();
 
+    /**
+     *
+     * @param parsedText text to be identified for the language it's written in.
+     */
     public void identifyLanguage(String parsedText) {
         StringManager stringManager = new StringManager();
         String query = stringManager.getTextURLEncoded(parsedText);
