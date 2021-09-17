@@ -1,4 +1,4 @@
-package org.imagetextapp.apis.tools;
+package org.imagetextapp.apis.utility;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
 
+/**
+ * Reads API authorization keys/values from an external secure file.
+ */
 public class PropertiesReader {
 
     /**

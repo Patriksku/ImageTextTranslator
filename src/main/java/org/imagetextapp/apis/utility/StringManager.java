@@ -1,12 +1,14 @@
-package org.imagetextapp.apis.tools;
+package org.imagetextapp.apis.utility;
 
-import javax.imageio.IIOException;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+/**
+ * Performs various operations on strings.
+ */
 public class StringManager {
 
     public String getCleanString(String toClean) {

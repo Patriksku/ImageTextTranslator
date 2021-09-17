@@ -1,12 +1,10 @@
-package org.imagetextapp.apis.tools;
+package org.imagetextapp.apis.utility;
 
 import org.imgscalr.Scalr.*;
 import static org.imgscalr.Scalr.OP_ANTIALIAS;
 import static org.imgscalr.Scalr.resize;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 
 /**
  * WIP

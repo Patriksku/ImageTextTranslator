@@ -1,8 +1,8 @@
-package org.imagetextapp.apis.tools;
+package org.imagetextapp.apis.utility;
 
-import org.imagetextapp.apis.DetectLanguageHandler;
+import org.imagetextapp.apis.detectlanguage.DetectLanguageHandler;
 import org.imagetextapp.apis.ocr.OCRHandler;
-import org.imagetextapp.apis.ocr.beans.OCRObject;
+import org.imagetextapp.apis.ocr.OCRObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +15,10 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Supplier;
 
+/**
+ * Builds a valid multipart/form-data encoded POST query which can be handled by Java's HttpClient.
+ * From: https://stackoverflow.com/questions/46392160/java-9-httpclient-send-a-multipart-form-data-request @ittupelo
+ */
 public class MultiPartBody {
     private List<PartsSpecification> partsSpecificationList = new ArrayList<>();
     private String boundary = UUID.randomUUID().toString();

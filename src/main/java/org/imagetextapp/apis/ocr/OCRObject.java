@@ -1,5 +1,8 @@
-package org.imagetextapp.apis.ocr.beans;
+package org.imagetextapp.apis.ocr;
 
+/**
+ * Object representation of the JSON response from the OCR API.
+ */
 public class OCRObject {
 
     private int textOrientation = 0;
@@ -96,7 +99,7 @@ public class OCRObject {
                 ", errorDetails='" + errorDetails + '\n' +
                 ", ocrExitCode=" + ocrExitCode + '\n' +
                 ", errorOnProcessing=" + errorOnProcessing + '\n' +
-                ", processingTime=" + processingTime + '\n' +
+                ", processingTime=" + processingTime +
                 '}';
     }
 }
