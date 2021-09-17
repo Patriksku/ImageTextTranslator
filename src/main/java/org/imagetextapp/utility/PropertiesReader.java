@@ -1,4 +1,4 @@
-package org.imagetextapp.apis.tools;
+package org.imagetextapp.utility;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +7,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
 
+/**
+ * Reads API authorization keys/values from an external secure file.
+ * From: https://itnext.io/how-to-store-passwords-and-api-keys-in-project-code-1eaf5cb235c9
+ */
 public class PropertiesReader {
 
     /**

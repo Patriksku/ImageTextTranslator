@@ -1,14 +1,21 @@
-package org.imagetextapp.apis.tools;
+package org.imagetextapp.utility;
 
-import javax.imageio.IIOException;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+/**
+ * Performs various operations on strings.
+ */
 public class StringManager {
 
+    /**
+     *
+     * @param toClean string.
+     * @return clean version without special characters.
+     */
     public String getCleanString(String toClean) {
         return toClean.replace("\r\n", " ").replace("\n", " ");
     }
@@ -23,12 +30,47 @@ public class StringManager {
         }
     }
 
+    /**
+     *
+     * @param toEncode string.
+     * @return url encoded string.
+     */
     public String getTextURLEncoded(String toEncode) {
         return URLEncoder.encode(toEncode, StandardCharsets.UTF_8);
     }
 
+    /**
+     *
+     * @param url url to be parameterized.
+     * @param query value.
+     * @return parameterized url.
+     */
     public String getParameterizedURL(String url, String query) {
         return url + "?q=" + query;
+    }
+
+    /**
+     *
+     * @param toTranslate string.
+     * @param target language.
+     * @param source language.
+     * @return string in required "application/x-www-form-urlencoded" with correct format.
+     */
+    public String getAppXForm(String toTranslate, String target, String source) {
+        return "q=" + toTranslate + "&" +
+                "target=" + target + "&" +
+                "source=" + source;
+    }
+
+    /**
+     *
+     * @param toTranslate string.
+     * @param target language.
+     * @return string in required "application/x-www-form-urlencoded" with correct format.
+     */
+    public String getAppXForm(String toTranslate, String target) {
+        return "q=" + toTranslate + "&" +
+                "target=" + target;
     }
 
 
