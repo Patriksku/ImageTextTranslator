@@ -11,15 +11,13 @@ import java.nio.file.Path;
  */
 public class OCRHandler {
 
-    private OCRObject ocrObject = new OCRObject();
-
     /**
      *
      * @param localFile Path to a local file (image).
      * @param language The language of the text of the local file (image).
      * @param identifyLanguage If the server should try to identify the language to generate text.
      */
-    public void uploadLocalImage(Path localFile, String language, boolean identifyLanguage) {
+    public OCRObject uploadLocalImage(Path localFile, String language, boolean identifyLanguage) {
         MultiPartBody multiPartBody;
 
         if (identifyLanguage) {
@@ -46,7 +44,7 @@ public class OCRHandler {
 
         // Parse response to object.
         JsonParser jsonParser = new JsonParser();
-        this.ocrObject = jsonParser.parseOCRResponse(response);
+        return jsonParser.parseOCRResponse(response);
     }
 
     /**
@@ -55,7 +53,7 @@ public class OCRHandler {
      * @param language The language of the text of the file (image).
      * @param identifyLanguage If the server should try to identify the language to generate text.
      */
-    public void uploadURLImage(String urlFile, String language, boolean identifyLanguage) {
+    public OCRObject uploadURLImage(String urlFile, String language, boolean identifyLanguage) {
         MultiPartBody multiPartBody;
 
         if (identifyLanguage) {
@@ -82,14 +80,6 @@ public class OCRHandler {
 
         // Parse response to object.
         JsonParser jsonParser = new JsonParser();
-        this.ocrObject = jsonParser.parseOCRResponse(response);
-    }
-
-    public OCRObject getOcrObject() {
-        if (ocrObject.isErrorOnProcessing()) {
-            System.out.println("Returning object with error details from last OCR connection.");
-            return this.ocrObject;
-        }
-        return this.ocrObject;
+        return jsonParser.parseOCRResponse(response);
     }
 }

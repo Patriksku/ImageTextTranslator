@@ -109,7 +109,7 @@
                       <toolTipText value="Select the text language inside the image. If the language is unknown, select &quot;Unknown&quot;."/>
                     </properties>
                   </component>
-                  <component id="3900c" class="javax.swing.JComboBox" binding="textLanguageBox">
+                  <component id="3900c" class="javax.swing.JComboBox" binding="textGenerationLanguageBox">
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -146,21 +146,21 @@
                   </component>
                 </children>
               </grid>
-              <component id="1548b" class="javax.swing.JRadioButton" binding="standardLayoutRadioButton" default-binding="true">
+              <component id="1548b" class="javax.swing.JRadioButton" binding="retainLayoutRadioButton">
                 <constraints>
                   <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <selected value="true"/>
-                  <text value="Standard Layout"/>
+                  <text value="Retain Layout"/>
                 </properties>
               </component>
-              <component id="922bb" class="javax.swing.JRadioButton" binding="retainLayoutRadioButton" default-binding="true">
+              <component id="922bb" class="javax.swing.JRadioButton" binding="standardLayoutRadioButton">
                 <constraints>
                   <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Retain Layout"/>
+                  <text value="Standardized Layout"/>
                 </properties>
               </component>
               <component id="17e03" class="javax.swing.JButton" binding="copyTextButton" default-binding="true">
