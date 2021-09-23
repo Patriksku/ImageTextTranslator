@@ -1,7 +1,9 @@
 package org.imagetextapp.utility;
 
+import javax.sound.sampled.*;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -13,11 +15,11 @@ public class ConnectionManager {
 
     /**
      *
-     * @param multiPartBody multipart/form-data encoding for the file request to OCR API.
+     * @param multiPartBody multipart/form-data parameters for the file request to OCR API.
      * @return response from the OCR API.
      */
     public HttpResponse<String> makeOCRRequest(MultiPartBody multiPartBody) {
-        String OCR_URL = "https://api.ocr.space/parse/image";
+        final String OCR_URL = "https://api.ocr.space/parse/image";
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = null;
 
@@ -45,9 +47,9 @@ public class ConnectionManager {
      */
     public HttpResponse<String> makeDetectLanguageRequest(String query) {
         StringManager stringManager = new StringManager();
-        String noParamsURL = "https://ws.detectlanguage.com/0.2/detect";
+        final String noParamsURL = "https://ws.detectlanguage.com/0.2/detect";
 
-        String DETECT_LANGUAGE_URL = stringManager.getParameterizedURL(noParamsURL, query);
+        String DETECT_LANGUAGE_URL = stringManager.getDetectLanguageParameterizedURL(noParamsURL, query);
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = null;
 
@@ -92,7 +94,34 @@ public class ConnectionManager {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         } catch (IOException | InterruptedException e) {
-            System.out.println("An error occurred while trying to make an OCR request.");
+            System.out.println("An error occurred while trying to make a Translate request.");
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+    /**
+     *
+     * @param multiPartBody multipart/form-data parameters for the text-to-speech request to Voice RSS API.
+     * @return response from the Voice RSS API.
+     */
+    public HttpResponse<String> makeGetVoiceRequestForm(MultiPartBody multiPartBody) {
+        final String VOICE_URL = "https://api.voicerss.org/";
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = null;
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .header("Content-Type", "multipart/form-data; boundary=" + multiPartBody.getBoundary())
+                .uri(URI.create(VOICE_URL))
+                .POST(multiPartBody.build())
+                .build();
+
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        } catch (IOException | InterruptedException e) {
+            System.out.println("An error occurred while trying to make a VoiceRSS request.");
             e.printStackTrace();
         }
         return response;

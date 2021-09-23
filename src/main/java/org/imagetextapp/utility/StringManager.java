@@ -20,6 +20,10 @@ public class StringManager {
         return toClean.replace("\r\n", " ").replace("\n", " ");
     }
 
+    public String removeExtraNewLines(String toClean) {
+        return toClean.replace("\n", "");
+    }
+
     public void saveTextToFile(String txt, String fileName) {
         String savePath = "C:\\Users\\fourseven\\Desktop\\" + fileName;
         try {
@@ -41,12 +45,29 @@ public class StringManager {
 
     /**
      *
-     * @param url url to be parameterized.
+     * @param url to be parameterized.
      * @param query value.
      * @return parameterized url.
      */
-    public String getParameterizedURL(String url, String query) {
+    public String getDetectLanguageParameterizedURL(String url, String query) {
         return url + "?q=" + query;
+    }
+
+    /**
+     *
+     * @param url to be parameterized.
+     * @param API_KEY api secret key.
+     * @param language of the text.
+     * @param voice that is to read the text
+     * @param text that is to be read
+     * @return parameterized url.
+     */
+    public String getVoiceParameterizedURL(String url, String API_KEY, String language, String voice, String text) {
+        return url + "?" + "key=" + API_KEY + "&" +
+                "hl=" + language + "&" +
+                "v=" + voice + "&" +
+                "b64=" + "true" + "&" +
+                "src=" + getTextURLEncoded(text);
     }
 
     /**

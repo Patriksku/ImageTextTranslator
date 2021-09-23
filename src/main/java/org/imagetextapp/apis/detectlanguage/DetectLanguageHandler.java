@@ -12,13 +12,12 @@ import java.net.http.HttpResponse;
  */
 public class DetectLanguageHandler {
 
-    private DetectLanguageObject detectLanguageObject = new DetectLanguageObject();
-
     /**
      *
      * @param parsedText text to be identified for the language it's written in.
+     * @return Object representation of JSON response from Detect Language API.
      */
-    public void identifyLanguage(String parsedText) {
+    public DetectLanguageObject identifyLanguage(String parsedText) {
         StringManager stringManager = new StringManager();
         String query = stringManager.getTextURLEncoded(parsedText);
 
@@ -30,17 +29,6 @@ public class DetectLanguageHandler {
 
         // Parse response to object.
         JsonParser jsonParser = new JsonParser();
-        this.detectLanguageObject = jsonParser.parseDetectLanguageResponse(response);
-
-        System.out.println("---");
-        System.out.println(detectLanguageObject.toString());
-    }
-
-    public DetectLanguageObject getDetectLanguageObject() {
-        if (detectLanguageObject.isErrorOnProcessing()) {
-            System.out.println("Returning object from last errored Detect Language connection.");
-            return this.detectLanguageObject;
-        }
-        return this.detectLanguageObject;
+        return jsonParser.parseDetectLanguageResponse(response);
     }
 }

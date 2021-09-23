@@ -12,15 +12,14 @@ import java.net.http.HttpResponse;
  */
 public class TranslateHandler {
 
-    private String translatedText = "";
-
     /**
      *
      * @param toTranslate text to be translated
      * @param target language
      * @param source language (optional)
+     * @return Object representation of JSON response from Google Translate API.
      */
-    public void translateText(String toTranslate, String target, String source) {
+    public String translateText(String toTranslate, String target, String source) {
         StringManager stringManager = new StringManager();
         String query = stringManager.getAppXForm(toTranslate, target, source);
 
@@ -35,18 +34,16 @@ public class TranslateHandler {
 
         // Parse response (translated text) to String.
         JsonParser jsonParser = new JsonParser();
-        this.translatedText = jsonParser.parseTranslateResponse(response);
-
-        System.out.println("Translated text from Translate API: ");
-        System.out.println(this.translatedText);
+        return jsonParser.parseTranslateResponse(response);
     }
 
     /**
      *
      * @param toTranslate text to be translated
      * @param target language
+     * @return Object representation of JSON response from Google Translate API.
      */
-    public void translateText(String toTranslate, String target) {
+    public String translateText(String toTranslate, String target) {
         StringManager stringManager = new StringManager();
         String query = stringManager.getAppXForm(toTranslate, target);
 
@@ -61,13 +58,6 @@ public class TranslateHandler {
 
         // Parse response (translated text) to String.
         JsonParser jsonParser = new JsonParser();
-        this.translatedText = jsonParser.parseTranslateResponse(response);
-
-        System.out.println("Translated text from Translate API: ");
-        System.out.println(this.translatedText);
-    }
-
-    public String getTranslatedText() {
-        return translatedText;
+        return jsonParser.parseTranslateResponse(response);
     }
 }
