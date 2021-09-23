@@ -1,5 +1,8 @@
 package org.imagetextapp.gui;
 
+/**
+ * Object representation of a JComboBox item with key-value mapping.
+ */
 public class TextGenerationBoxItem {
 
     private String key;

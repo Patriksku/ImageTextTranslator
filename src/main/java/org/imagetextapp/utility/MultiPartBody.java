@@ -176,30 +176,6 @@ public class MultiPartBody {
 
     public static void main(String[] args) {
 
-        Path localFile = Paths.get("C:\\Users\\fourseven\\Desktop\\notes\\Java\\projects\\bookpage.jpg");
-        String urlFile = "https://marketplace.canva.com/EAEjCdGx_iA/1/0/1131w/canva-pizza-menu-LjjRAs0R_8A.jpg";
-
-        Path wrongFile = Paths.get("C:\\Users\\fourseven\\Desktop\\notes\\Java\\projects\\notImage.txt");
-        String wrongUrl = "http://wallpaperswide.com/new_york_city_buildings-wallpapers.html";
-
-        Path largeLocalFile = Paths.get("C:\\Users\\fourseven\\Desktop\\notes\\Java\\projects\\large.png");
-        String largeUrlFile = "https://i.redd.it/e440eaxet2f11.png";
-
-        String OCR_URL = "https://api.ocr.space/parse/image";
-        String DETECT_LANGUAGE_URL = "https://ws.detectlanguage.com/0.2/detect";
-
-
-//        System.getProperty("\njava.class.path");
-
-//        OCRHandler ocrHandler = new OCRHandler();
-//        ocrHandler.uploadLocalImage(localFile, "eng", false);
-//        OCRObject ocrObject = ocrHandler.getOcrObject();
-//
-//        DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
-//
-//        System.out.println("Detecting language with clean String: \n");
-//        detectLanguageHandler.identifyLanguage(ocrObject.getParsedTextClean());
-
         TranslateHandler translateHandler = new TranslateHandler();
         translateHandler.translateText("Hello, world!", "es");
     }

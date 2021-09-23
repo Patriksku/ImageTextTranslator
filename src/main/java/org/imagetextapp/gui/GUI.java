@@ -3,17 +3,24 @@ package org.imagetextapp.gui;
 import org.imagetextapp.apis.ocr.OCRHandler;
 import org.imagetextapp.apis.ocr.OCRObject;
 import org.imagetextapp.utility.MimeManager;
+import org.imagetextapp.utility.StringManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
+import java.awt.datatransfer.StringSelection;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+/**
+ * Manages the GUI of the application and handles user interactions.
+ */
 public class GUI extends JFrame {
     private JTabbedPane tabbedPane1;
     private JTextArea textArea;
@@ -38,6 +45,10 @@ public class GUI extends JFrame {
     private OCRObject ocrObject;
     private static final int FILE_SIZE_LIMIT = 1024;
 
+    /**
+     * Constructor for initializing the GUI.
+     * @param title of the GUI window.
+     */
     public GUI(String title) {
         super(title);
 
@@ -54,6 +65,9 @@ public class GUI extends JFrame {
         fillDropDowns();
     }
 
+    /**
+     * Enables necessary listeners for various GUI-elements.
+     */
     private void enableListeners() {
         fileTextField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -72,9 +86,9 @@ public class GUI extends JFrame {
             }
         });
 
-        fileButton.addActionListener(e -> {
-            fileButtonAction();
-        });
+        fileButton.addActionListener(e ->
+            fileButtonAction()
+        );
 
         fileLinkRadioButton.addActionListener(e ->
                 fileButton.setVisible(false)
@@ -96,11 +110,22 @@ public class GUI extends JFrame {
                 provideGeneratedText(ocrObject)
         );
 
-        generateTextButton.addActionListener(e -> {
-            generateTextButtonAction();
-        });
+        generateTextButton.addActionListener(e ->
+                generateTextButtonAction()
+        );
+
+        copyTextButton.addActionListener(e ->
+                copyToClipboard()
+        );
+
+        saveTextButton.addActionListener(e ->
+                saveLocalTxtFile()
+        );
     }
 
+    /**
+     * Groups together radio buttons for correct GUI logic.
+     */
     private void enableButtonGroups() {
         ButtonGroup localLinkGroup = new ButtonGroup();
         localLinkGroup.add(localFileRadioButton);
@@ -111,11 +136,18 @@ public class GUI extends JFrame {
         generatedTextOptionsGroup.add(retainLayoutRadioButton);
     }
 
+    /**
+     * Sets necessary GUI-elements to be disabled by standard, until some
+     * user interaction enables the buttons and their corresponding functionalities.
+     */
     private void initStandardEnabling() {
         copyTextButton.setEnabled(false);
         saveTextButton.setEnabled(false);
     }
 
+    /**
+     * Fills JComboBoxes with correct items needed for the functionality of the application.
+     */
     private void fillDropDowns() {
         // Fill textGenerationLanguageBox with all supported languages.
         textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Arabic", "ara"));
@@ -147,6 +179,9 @@ public class GUI extends JFrame {
         textGenerationLanguageBox.setSelectedIndex(8);
     }
 
+    /**
+     * Handles the user-specified local file that is to be processed for text generation.
+     */
     private void fileButtonAction() {
         JFileChooser fileChooser = new JFileChooser();
         int chosenFile = fileChooser.showOpenDialog(this);
@@ -170,6 +205,9 @@ public class GUI extends JFrame {
         }
     }
 
+    /**
+     * Initiates text generation for the file that the user has specified.
+     */
     private void generateTextButtonAction() {
 
         // If generate text for local file is selected
@@ -182,19 +220,27 @@ public class GUI extends JFrame {
         }
     }
 
+    /**
+     * Generates text based on the contents of the user-selected local file.
+     */
     private void generateTextForLocalFile() {
         resetStatusLabel();
-        Path path = null;
+        Path path;
+
+        // Verifies so that a valid file-directory has been specified by the user.
         try {
             path = Path.of(userFilePathInput);
         } catch (InvalidPathException IPE) {
             openInvalidFileDialog();
             return;
         }
+
+        // Assigns a valid file-directory.
         selectedFile = path.toFile();
         long fileSizeBytes = selectedFile.length();
         long fileSizeKB = fileSizeBytes / 1024;
 
+        // Checks if selected file is within the file size limit (1 MB).
         if (fileSizeKB > FILE_SIZE_LIMIT) {
             openTooLargeFileSizeDialog();
         } else if (fileSizeKB == 0) {
@@ -204,27 +250,55 @@ public class GUI extends JFrame {
                 String mime = Files.probeContentType(path);
                 MimeManager mimeManager = new MimeManager();
 
+                // Checks if the content type of the selected file is supported for text generation.
                 if (mimeManager.validImageFile(mime)) {
                     TextGenerationBoxItem item = (TextGenerationBoxItem) textGenerationLanguageBox.getSelectedItem();
                     assert item != null;
                     String selectedLanguage = item.getValue();
-                    Path finalPath = path;
 
                     setStatusLabel("Size of local file: " + fileSizeKB + "KB. Initializing text generation...");
 
-                    EventQueue.invokeLater(() -> {
-                        OCRHandler ocrHandler = new OCRHandler();
-                        ocrObject = ocrHandler.uploadLocalImage(finalPath, selectedLanguage, unknownCheckBox.isSelected());
-                        System.out.println(ocrObject.toString());
-                        provideGeneratedText(ocrObject);
+                    // Thread for handling the server communication and safely updating GUI throughout the process.
+                    SwingWorker<OCRObject, String> worker = new SwingWorker<>() {
 
-                        if (ocrObject.isErrorOnProcessing()) {
-                            openCustomOCRErrorDialog(ocrObject);
-                            resetStatusLabel();
-                        } else {
-                            setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
+                        @Override
+                        protected OCRObject doInBackground() {
+                            OCRHandler ocrHandler = new OCRHandler();
+                            ocrObject = ocrHandler.uploadLocalImage(path, selectedLanguage, unknownCheckBox.isSelected());
+                            publish();
+
+                            return ocrObject;
                         }
-                    });
+
+                        @Override
+                        protected void process(List<String> chunks) {
+                            setStatusLabel("Processing the file...");
+                        }
+
+                        @Override
+                        protected void done() {
+                            try {
+                                OCRObject ocrObject = get();
+                                System.out.println(ocrObject.toString());
+                                provideGeneratedText(ocrObject);
+
+                                if (ocrObject.isErrorOnProcessing()) {
+                                    deactivateCopySaveButtons();
+                                    openCustomOCRErrorDialog(ocrObject);
+                                    resetStatusLabel();
+                                } else {
+                                    activateCopySaveButtons();
+                                    setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
+                                }
+
+                            } catch (InterruptedException | ExecutionException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+
+                    // Start the thread.
+                    worker.execute();
 
                 } else {
                     openUnsupportedFileDialog();
@@ -235,6 +309,9 @@ public class GUI extends JFrame {
         }
     }
 
+    /**
+     * Generates text based on the contents of the user-selected URL file.
+     */
     private void generateTextForImageLink() {
         resetStatusLabel();
         TextGenerationBoxItem item = (TextGenerationBoxItem) textGenerationLanguageBox.getSelectedItem();
@@ -243,21 +320,50 @@ public class GUI extends JFrame {
 
         setStatusLabel("Initializing text generation for the provided url-link...");
 
-        EventQueue.invokeLater(() -> {
-            OCRHandler ocrHandler = new OCRHandler();
-            ocrObject = ocrHandler.uploadURLImage(userFilePathInput, selectedLanguage, unknownCheckBox.isSelected());
-            System.out.println(ocrObject.toString());
-            provideGeneratedText(ocrObject);
+        // Thread for handling the server communication and safely updating GUI throughout the process.
+        SwingWorker<OCRObject, String> worker = new SwingWorker<>() {
+            @Override
+            protected OCRObject doInBackground() {
+                OCRHandler ocrHandler = new OCRHandler();
+                ocrObject = ocrHandler.uploadURLImage(userFilePathInput, selectedLanguage, unknownCheckBox.isSelected());
+                publish();
 
-            if (ocrObject.isErrorOnProcessing()) {
-                openCustomOCRErrorDialog(ocrObject);
-                resetStatusLabel();
-            } else {
-                setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
+                return ocrObject;
             }
-        });
+
+            @Override
+            protected void process(List<String> chunks) {
+                setStatusLabel("Processing the file...");
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    OCRObject ocrObject = get();
+                    System.out.println(ocrObject.toString());
+                    provideGeneratedText(ocrObject);
+
+                    if (ocrObject.isErrorOnProcessing()) {
+                        openCustomOCRErrorDialog(ocrObject);
+                        resetStatusLabel();
+                    } else {
+                        setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
+                    }
+
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        };
+
+        worker.execute();
     }
 
+    /**
+     * Fills the JTextArea GUI-element with the user-selected text layout.
+     * @param ocrObject Object-representation containing the JSON response from OCR API.
+     */
     private void provideGeneratedText(OCRObject ocrObject) {
         if (ocrObject != null) {
             if (standardLayoutRadioButton.isSelected()) {
@@ -268,12 +374,75 @@ public class GUI extends JFrame {
         }
     }
 
+    /**
+     * Copies the contents of the JTextArea GUI-element to the clipboard.
+     */
+    private void copyToClipboard() {
+        Toolkit.getDefaultToolkit()
+                .getSystemClipboard()
+                .setContents(new StringSelection(textArea.getText()), null);
+        setStatusLabel("Copied to clipboard.");
+    }
+
+    /**
+     * Saves the contents of the JTextArea GUI-element to a .txt file locally, bounded by the
+     * naming and directory choice of the user.
+     */
+    private void saveLocalTxtFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showSaveDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            if (file == null) {
+                return;
+            }
+
+            // Handle .txt extension of filename based on how the user named the file that is to be saved.
+            if (!file.getName().toLowerCase().endsWith(".txt")) {
+                file = new File(file.getParentFile(), file.getName() + ".txt");
+            } else {
+                file = new File(file.getParentFile(), file.getName());
+            }
+
+            try {
+                // Quick-fix clone for displaying the text correctly while maintaining same structure
+                // in saved file.
+                JTextArea clone = new JTextArea();
+                StringManager stringManager = new StringManager();
+                clone.setText(stringManager.removeExtraNewLines(textArea.getText()));
+                clone.write(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
+                openSaveOKDialog();
+            } catch (IOException e) {
+                e.printStackTrace();
+                openSaveFailedDialog();
+            }
+        }
+    }
+
     private void setStatusLabel(String status) {
         statusLabel.setText(status);
     }
 
     private void resetStatusLabel() {
         statusLabel.setText("Status...");
+    }
+
+    /**
+     * Activate the "Copy to Clipboard" and "Save to .txt" functionalities when these are ready.
+     */
+    private void activateCopySaveButtons() {
+        copyTextButton.setEnabled(true);
+        saveTextButton.setEnabled(true);
+    }
+
+    /**
+     * De-activates the "Copy to Clipboard" and "Save to .txt" functionalities when these are not ready.
+     */
+    private void deactivateCopySaveButtons() {
+        copyTextButton.setEnabled(false);
+        saveTextButton.setEnabled(false);
     }
 
     private void openUnsupportedFileDialog() {
@@ -292,13 +461,25 @@ public class GUI extends JFrame {
                 "generating text from file. \nPlease choose a smaller file.", "Too large file", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    private void openSaveOKDialog() {
+        JOptionPane.showMessageDialog(this, "File (.txt) successfully saved to specified directory.",
+                "Save: Success", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void openSaveFailedDialog() {
+        JOptionPane.showMessageDialog(this, "File (.txt) could not be saved. Try again without adding any extensions to the file name.",
+                "Save: Failed", JOptionPane.INFORMATION_MESSAGE);
+    }
+
     private void openCustomOCRErrorDialog(OCRObject ocrObject) {
         JOptionPane.showMessageDialog(this, ocrObject.getErrorMessage() + "\n" + "OCR Exit Code: "
-                + ocrObject.getOcrExitCode() + "\n" + ocrObject.getErrorDetails(), "OCR API: Invalid request", JOptionPane.INFORMATION_MESSAGE);
+                + ocrObject.getOcrExitCode() + "\n" + ocrObject.getErrorDetails(), "OCR API: Processing error", JOptionPane.INFORMATION_MESSAGE);
     }
 
 
     public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
             GUI gui = new GUI("ImageTextSpeech");
+        });
     }
 }
