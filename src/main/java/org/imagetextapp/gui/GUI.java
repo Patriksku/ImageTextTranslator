@@ -1,5 +1,7 @@
 package org.imagetextapp.gui;
 
+import org.imagetextapp.apis.detectlanguage.DetectLanguageHandler;
+import org.imagetextapp.apis.detectlanguage.DetectLanguageObject;
 import org.imagetextapp.apis.ocr.OCRHandler;
 import org.imagetextapp.apis.ocr.OCRObject;
 import org.imagetextapp.utility.MimeManager;
@@ -31,7 +33,7 @@ public class GUI extends JFrame {
     private JButton fileButton;
     private JRadioButton localFileRadioButton;
     private JRadioButton fileLinkRadioButton;
-    private JComboBox<TextGenerationBoxItem> textGenerationLanguageBox;
+    private JComboBox<BoxItem> textGenerationLanguageBox;
     private JCheckBox unknownCheckBox;
     private JButton generateTextButton;
     private JPanel mainPanel;
@@ -39,6 +41,26 @@ public class GUI extends JFrame {
     private JRadioButton retainLayoutRadioButton;
     private JButton copyTextButton;
     private JButton saveTextButton;
+    private JPanel translationVoicePanel;
+    private JPanel aboutPanel;
+    private JLabel statusLabelOpt;
+    private JRadioButton retainLayoutRadioButtonOpt;
+    private JRadioButton standardLayoutRadioButtonOpt;
+    private JButton saveVoiceButton;
+    private JButton copyTextOptButton;
+    private JComboBox<BoxItem> translateFromBox;
+    private JComboBox<BoxItem> translateToBox;
+    private JCheckBox unknownOptCheckBox;
+    private JTextArea textAreaOpt;
+    private JComboBox<BoxItem> textLanguageBox;
+    private JComboBox<BoxItem> selectVoiceBox;
+    private JButton translateTextButton;
+    private JButton identifyLanguageButton;
+    private JLabel translateFromLabel;
+    private JLabel translateToLabel;
+    private JButton generateVoiceButton;
+    private JButton playVoiceButton;
+    private JButton stopVoiceButton;
 
     private String userFilePathInput = "";
     private File selectedFile;
@@ -87,7 +109,7 @@ public class GUI extends JFrame {
         });
 
         fileButton.addActionListener(e ->
-            fileButtonAction()
+                fileButtonAction()
         );
 
         fileLinkRadioButton.addActionListener(e ->
@@ -115,12 +137,27 @@ public class GUI extends JFrame {
         );
 
         copyTextButton.addActionListener(e ->
-                copyToClipboard()
+                copyToClipboard(copyTextButton)
         );
 
         saveTextButton.addActionListener(e ->
                 saveLocalTxtFile()
         );
+
+        unknownOptCheckBox.addActionListener(e ->
+                translateFromBox.setEnabled(!unknownOptCheckBox.isSelected())
+        );
+
+        identifyLanguageButton.addActionListener(e ->
+                identifyLanguage()
+        );
+
+        textLanguageBox.addActionListener(e ->
+                handleSelectVoiceBox()
+        );
+
+        copyTextOptButton.addActionListener(e ->
+                copyToClipboard(copyTextOptButton));
     }
 
     /**
@@ -141,8 +178,32 @@ public class GUI extends JFrame {
      * user interaction enables the buttons and their corresponding functionalities.
      */
     private void initStandardEnabling() {
+        // Text generation tab
         copyTextButton.setEnabled(false);
         saveTextButton.setEnabled(false);
+
+        // Translation tab
+        identifyLanguageButton.setEnabled(false);
+        translateTextButton.setEnabled(false);
+
+        generateVoiceButton.setEnabled(false);
+        playVoiceButton.setEnabled(false);
+        stopVoiceButton.setEnabled(false);
+
+        copyTextOptButton.setEnabled(false);
+        saveVoiceButton.setEnabled(false);
+    }
+
+    private void enableTranslationTab() {
+        identifyLanguageButton.setEnabled(true);
+        translateTextButton.setEnabled(true);
+
+        generateVoiceButton.setEnabled(true);
+        playVoiceButton.setEnabled(true);
+        stopVoiceButton.setEnabled(true);
+
+        copyTextOptButton.setEnabled(true);
+        saveVoiceButton.setEnabled(true);
     }
 
     /**
@@ -150,33 +211,122 @@ public class GUI extends JFrame {
      */
     private void fillDropDowns() {
         // Fill textGenerationLanguageBox with all supported languages.
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Arabic", "ara"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Bulgarian", "bul"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Chinese (Simplified)", "chs"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Chinese (Traditional)", "cht"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Croatian", "hrv"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Czech", "cze"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Danish", "dan"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Dutch", "dut"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("English", "eng"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Finnish", "fin"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("French", "fre"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("German", "ger"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Greek", "gre"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Hungarian", "hun"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Korean", "kor"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Italian", "ita"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Japanese", "jpn"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Polish", "pol"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Portuguese", "por"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Russian", "rus"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Slovenian", "slv"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Spanish", "spa"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Swedish", "swe"));
-        textGenerationLanguageBox.addItem(new TextGenerationBoxItem("Turkish", "tur"));
+        textGenerationLanguageBox.addItem(new BoxItem("Arabic", "ara"));
+        textGenerationLanguageBox.addItem(new BoxItem("Bulgarian", "bul"));
+        textGenerationLanguageBox.addItem(new BoxItem("Chinese (Simplified)", "chs"));
+        textGenerationLanguageBox.addItem(new BoxItem("Chinese (Traditional)", "cht"));
+        textGenerationLanguageBox.addItem(new BoxItem("Croatian", "hrv"));
+        textGenerationLanguageBox.addItem(new BoxItem("Czech", "cze"));
+        textGenerationLanguageBox.addItem(new BoxItem("Danish", "dan"));
+        textGenerationLanguageBox.addItem(new BoxItem("Dutch", "dut"));
+        textGenerationLanguageBox.addItem(new BoxItem("English", "eng"));
+        textGenerationLanguageBox.addItem(new BoxItem("Finnish", "fin"));
+        textGenerationLanguageBox.addItem(new BoxItem("French", "fre"));
+        textGenerationLanguageBox.addItem(new BoxItem("German", "ger"));
+        textGenerationLanguageBox.addItem(new BoxItem("Greek", "gre"));
+        textGenerationLanguageBox.addItem(new BoxItem("Hungarian", "hun"));
+        textGenerationLanguageBox.addItem(new BoxItem("Korean", "kor"));
+        textGenerationLanguageBox.addItem(new BoxItem("Italian", "ita"));
+        textGenerationLanguageBox.addItem(new BoxItem("Japanese", "jpn"));
+        textGenerationLanguageBox.addItem(new BoxItem("Polish", "pol"));
+        textGenerationLanguageBox.addItem(new BoxItem("Portuguese", "por"));
+        textGenerationLanguageBox.addItem(new BoxItem("Russian", "rus"));
+        textGenerationLanguageBox.addItem(new BoxItem("Slovenian", "slv"));
+        textGenerationLanguageBox.addItem(new BoxItem("Spanish", "spa"));
+        textGenerationLanguageBox.addItem(new BoxItem("Swedish", "swe"));
+        textGenerationLanguageBox.addItem(new BoxItem("Turkish", "tur"));
 
         // Set the standard value to "English".
         textGenerationLanguageBox.setSelectedIndex(8);
+
+        // Fill translateBoxes with all supported languages.
+        translateFromBox.addItem(new BoxItem("Arabic", "ar"));
+        translateToBox.addItem(new BoxItem("Arabic", "ar"));
+        translateFromBox.addItem(new BoxItem("Bulgarian", "bg"));
+        translateToBox.addItem(new BoxItem("Bulgarian", "bg"));
+        translateFromBox.addItem(new BoxItem("Chinese (Simplified)", "zh-CN"));
+        translateToBox.addItem(new BoxItem("Chinese (Simplified)", "zh-CN"));
+        translateFromBox.addItem(new BoxItem("Chinese (Traditional)", "zh-TW"));
+        translateToBox.addItem(new BoxItem("Chinese (Traditional)", "zh-TW"));
+        translateFromBox.addItem(new BoxItem("Croatian", "hr"));
+        translateToBox.addItem(new BoxItem("Croatian", "hr"));
+        translateFromBox.addItem(new BoxItem("Czech", "cs"));
+        translateToBox.addItem(new BoxItem("Czech", "cs"));
+        translateFromBox.addItem(new BoxItem("Danish", "da"));
+        translateToBox.addItem(new BoxItem("Danish", "da"));
+        translateFromBox.addItem(new BoxItem("Dutch", "nl"));
+        translateToBox.addItem(new BoxItem("Dutch", "nl"));
+        translateFromBox.addItem(new BoxItem("English", "en"));
+        translateToBox.addItem(new BoxItem("English", "en"));
+        translateFromBox.addItem(new BoxItem("Finnish", "fi"));
+        translateToBox.addItem(new BoxItem("Finnish", "fi"));
+        translateFromBox.addItem(new BoxItem("French", "fr"));
+        translateToBox.addItem(new BoxItem("French", "fr"));
+        translateFromBox.addItem(new BoxItem("German", "de"));
+        translateToBox.addItem(new BoxItem("German", "de"));
+        translateFromBox.addItem(new BoxItem("Greek", "el"));
+        translateToBox.addItem(new BoxItem("Greek", "el"));
+        translateFromBox.addItem(new BoxItem("Hungarian", "hu"));
+        translateToBox.addItem(new BoxItem("Hungarian", "hu"));
+        translateFromBox.addItem(new BoxItem("Korean", "ko"));
+        translateToBox.addItem(new BoxItem("Korean", "ko"));
+        translateFromBox.addItem(new BoxItem("Italian", "it"));
+        translateToBox.addItem(new BoxItem("Italian", "it"));
+        translateFromBox.addItem(new BoxItem("Japanese", "ja"));
+        translateToBox.addItem(new BoxItem("Japanese", "ja"));
+        translateFromBox.addItem(new BoxItem("Polish", "pl"));
+        translateToBox.addItem(new BoxItem("Polish", "pl"));
+        translateFromBox.addItem(new BoxItem("Portuguese", "pt"));
+        translateToBox.addItem(new BoxItem("Portuguese", "pt"));
+        translateFromBox.addItem(new BoxItem("Russian", "ru"));
+        translateToBox.addItem(new BoxItem("Russian", "ru"));
+        translateFromBox.addItem(new BoxItem("Slovenian", "sl"));
+        translateToBox.addItem(new BoxItem("Slovenian", "sl"));
+        translateFromBox.addItem(new BoxItem("Spanish", "es"));
+        translateToBox.addItem(new BoxItem("Spanish", "es"));
+        translateFromBox.addItem(new BoxItem("Swedish", "sv"));
+        translateToBox.addItem(new BoxItem("Swedish", "sv"));
+        translateFromBox.addItem(new BoxItem("Turkish", "tr"));
+        translateToBox.addItem(new BoxItem("Turkish", "tr"));
+
+        // Fill TextLanguageBoxes with all supported languages.
+        textLanguageBox.addItem(new BoxItem("Arabic (Egypt)", "ar-eg"));
+        textLanguageBox.addItem(new BoxItem("Arabic (Saudi Arabia)", "ar-sa"));
+        textLanguageBox.addItem(new BoxItem("Bulgarian", "bg-bg"));
+        textLanguageBox.addItem(new BoxItem("Chinese (Simplified)", "zh-cn"));
+        textLanguageBox.addItem(new BoxItem("Chinese (Traditional)", "zh-tw"));
+        textLanguageBox.addItem(new BoxItem("Croatian", "hr-hr"));
+        textLanguageBox.addItem(new BoxItem("Czech", "cs-cz"));
+        textLanguageBox.addItem(new BoxItem("Danish", "da-dk"));
+        textLanguageBox.addItem(new BoxItem("Dutch (Belgium)", "nl-be"));
+        textLanguageBox.addItem(new BoxItem("Dutch (Netherlands)", "nl-nl"));
+        textLanguageBox.addItem(new BoxItem("English (Australia)", "en-au"));
+        textLanguageBox.addItem(new BoxItem("English (Canada)", "en-ca"));
+        textLanguageBox.addItem(new BoxItem("English (Great Britain)", "en-gb"));
+        textLanguageBox.addItem(new BoxItem("English (India)", "en-in"));
+        textLanguageBox.addItem(new BoxItem("English (Ireland)", "en-ie"));
+        textLanguageBox.addItem(new BoxItem("English (United States)", "en-us"));
+        textLanguageBox.addItem(new BoxItem("Finnish", "fi-fi"));
+        textLanguageBox.addItem(new BoxItem("French (Canada)", "fr-ca"));
+        textLanguageBox.addItem(new BoxItem("French (France)", "fr-fr"));
+        textLanguageBox.addItem(new BoxItem("French (Switzerland)", "fr-ch"));
+        textLanguageBox.addItem(new BoxItem("German (Austria)", "de-at"));
+        textLanguageBox.addItem(new BoxItem("German (Germany)", "de-de"));
+        textLanguageBox.addItem(new BoxItem("German (Switzerland)", "de-ch"));
+        textLanguageBox.addItem(new BoxItem("Greek", "el-gr"));
+        textLanguageBox.addItem(new BoxItem("Hungarian", "hu-hu"));
+        textLanguageBox.addItem(new BoxItem("Korean", "ko-kr"));
+        textLanguageBox.addItem(new BoxItem("Italian", "it-it"));
+        textLanguageBox.addItem(new BoxItem("Japanese", "ja-jp"));
+        textLanguageBox.addItem(new BoxItem("Polish", "pl-pl"));
+        textLanguageBox.addItem(new BoxItem("Portuguese (Brazil)", "pt-br"));
+        textLanguageBox.addItem(new BoxItem("Portuguese (Portugal)", "pt-pt"));
+        textLanguageBox.addItem(new BoxItem("Russian", "ru-ru"));
+        textLanguageBox.addItem(new BoxItem("Slovenian", "sl-si"));
+        textLanguageBox.addItem(new BoxItem("Spanish (Mexico)", "es-mx"));
+        textLanguageBox.addItem(new BoxItem("Spanish (Spain)", "es-es"));
+        textLanguageBox.addItem(new BoxItem("Swedish", "sv-se"));
+        textLanguageBox.addItem(new BoxItem("Turkish", "tr-tr"));
     }
 
     /**
@@ -252,7 +402,7 @@ public class GUI extends JFrame {
 
                 // Checks if the content type of the selected file is supported for text generation.
                 if (mimeManager.validImageFile(mime)) {
-                    TextGenerationBoxItem item = (TextGenerationBoxItem) textGenerationLanguageBox.getSelectedItem();
+                    BoxItem item = (BoxItem) textGenerationLanguageBox.getSelectedItem();
                     assert item != null;
                     String selectedLanguage = item.getValue();
 
@@ -288,6 +438,7 @@ public class GUI extends JFrame {
                                     resetStatusLabel();
                                 } else {
                                     activateCopySaveButtons();
+                                    enableTranslationTab();
                                     setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
                                 }
 
@@ -314,7 +465,7 @@ public class GUI extends JFrame {
      */
     private void generateTextForImageLink() {
         resetStatusLabel();
-        TextGenerationBoxItem item = (TextGenerationBoxItem) textGenerationLanguageBox.getSelectedItem();
+        BoxItem item = (BoxItem) textGenerationLanguageBox.getSelectedItem();
         assert item != null;
         String selectedLanguage = item.getValue();
 
@@ -347,6 +498,7 @@ public class GUI extends JFrame {
                         openCustomOCRErrorDialog(ocrObject);
                         resetStatusLabel();
                     } else {
+                        enableTranslationTab();
                         setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
                     }
 
@@ -368,20 +520,30 @@ public class GUI extends JFrame {
         if (ocrObject != null) {
             if (standardLayoutRadioButton.isSelected()) {
                 textArea.setText(ocrObject.getParsedTextClean());
+                textAreaOpt.setText(ocrObject.getParsedTextClean());
             } else {
                 textArea.setText(ocrObject.getParsedText());
+                textAreaOpt.setText(ocrObject.getParsedText());
             }
         }
     }
 
     /**
-     * Copies the contents of the JTextArea GUI-element to the clipboard.
+     * Copies the contents of the JTextArea GUI-element in the current tab to the clipboard.
      */
-    private void copyToClipboard() {
-        Toolkit.getDefaultToolkit()
-                .getSystemClipboard()
-                .setContents(new StringSelection(textArea.getText()), null);
-        setStatusLabel("Copied to clipboard.");
+    private void copyToClipboard(JButton button) {
+        if (button.getName().equals("copyTextButton")) {
+            Toolkit.getDefaultToolkit()
+                    .getSystemClipboard()
+                    .setContents(new StringSelection(textArea.getText()), null);
+            setStatusLabel("Copied to clipboard.");
+
+        } else {
+            Toolkit.getDefaultToolkit()
+                    .getSystemClipboard()
+                    .setContents(new StringSelection(textAreaOpt.getText()), null);
+            setStatusOptLabel("Copied to clipboard.");
+        }
     }
 
     /**
@@ -425,8 +587,16 @@ public class GUI extends JFrame {
         statusLabel.setText(status);
     }
 
+    private void setStatusOptLabel(String status) {
+        statusLabelOpt.setText(status);
+    }
+
     private void resetStatusLabel() {
         statusLabel.setText("Status...");
+    }
+
+    private void resetStatusOptLabel() {
+        statusLabelOpt.setText("Status...");
     }
 
     /**
@@ -443,6 +613,237 @@ public class GUI extends JFrame {
     private void deactivateCopySaveButtons() {
         copyTextButton.setEnabled(false);
         saveTextButton.setEnabled(false);
+    }
+
+    private void handleSelectVoiceBox() {
+        BoxItem boxItem = (BoxItem) textLanguageBox.getSelectedItem();
+        assert boxItem != null;
+        populateSelectVoiceBox(boxItem.getKey());
+    }
+
+    private void populateSelectVoiceBox(String lang) {
+        switch (lang) {
+            case "Arabic (Egypt)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Oda (Female)", "Oda"));
+            }
+            case "Arabic (Saudi Arabia)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Salim (Male)", "Salim"));
+            }
+            case "Bulgarian" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Dimo (Male)", "Dimo"));
+            }
+            case "Chinese (Simplified)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Luli (Female)", "Luli"));
+                selectVoiceBox.addItem(new BoxItem("Shu (Female)", "Shu"));
+                selectVoiceBox.addItem(new BoxItem("Chow (Female)", "Chow"));
+                selectVoiceBox.addItem(new BoxItem("Wang (Male)", "Wang"));
+            }
+            case "Chinese (Traditional)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Akemi (Female)", "Akemi"));
+                selectVoiceBox.addItem(new BoxItem("Lin (Female)", "Lin"));
+                selectVoiceBox.addItem(new BoxItem("Lee (Male)", "Lee"));
+            }
+            case "Croatian" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Nikola (Male)", "Nikola"));
+            }
+            case "Czech" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Josef (Male)", "Josef"));
+            }
+            case "Danish" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Freja (Female)", "Freja"));
+            }
+            case "Dutch (Belgium)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Daan (Male)", "Daan"));
+            }
+            case "Dutch (Netherlands)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Lotte (Female)", "Lotte"));
+                selectVoiceBox.addItem(new BoxItem("Bram (Male)", "Bram"));
+            }
+            case "English (Australia)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Zoe (Female)", "Zoe"));
+                selectVoiceBox.addItem(new BoxItem("Isla (Female)", "Isla"));
+                selectVoiceBox.addItem(new BoxItem("Evie (Female)", "Evie"));
+                selectVoiceBox.addItem(new BoxItem("Jack (Male)", "Jack"));
+            }
+            case "English (Canada)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Rose (Female)", "Rose"));
+                selectVoiceBox.addItem(new BoxItem("Clara (Female)", "Clara"));
+                selectVoiceBox.addItem(new BoxItem("Emma (Female)", "Emma"));
+                selectVoiceBox.addItem(new BoxItem("Mason (Male)", "Mason"));
+            }
+            case "English (Great Britain)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Alice (Female)", "Alice"));
+                selectVoiceBox.addItem(new BoxItem("Nancy (Female)", "Nancy"));
+                selectVoiceBox.addItem(new BoxItem("Lily (Female)", "Lily"));
+                selectVoiceBox.addItem(new BoxItem("Harry (Male)", "Harry"));
+            }
+            case "English (India)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Eka (Female)", "Eka"));
+                selectVoiceBox.addItem(new BoxItem("Jai (Female)", "Jai"));
+                selectVoiceBox.addItem(new BoxItem("Ajit (Male)", "Ajit"));
+            }
+            case "English (Ireland)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Oran (Male)", "Oran"));
+            }
+            case "English (United States)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Linda (Female)", "Linda"));
+                selectVoiceBox.addItem(new BoxItem("Amy (Female)", "Amy"));
+                selectVoiceBox.addItem(new BoxItem("Mary (Female)", "Mary"));
+                selectVoiceBox.addItem(new BoxItem("John (Male)", "John"));
+                selectVoiceBox.addItem(new BoxItem("Mike (Male)", "Mike"));
+            }
+            case "Finnish" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Aada (Female)", "Aada"));
+            }
+            case "French (Canada)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Emile (Female)", "Emile"));
+                selectVoiceBox.addItem(new BoxItem("Olivia (Female)", "Olivia"));
+                selectVoiceBox.addItem(new BoxItem("Logan (Female)", "Logan"));
+                selectVoiceBox.addItem(new BoxItem("Felix (Male)", "Felix"));
+            }
+            case "French (France)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Bette (Female)", "Bette"));
+                selectVoiceBox.addItem(new BoxItem("Iva (Female)", "Iva"));
+                selectVoiceBox.addItem(new BoxItem("Zola (Female)", "Zola"));
+                selectVoiceBox.addItem(new BoxItem("Axel (Male)", "Axel"));
+            }
+            case "French (Switzerland)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Theo (Male)", "Theo"));
+            }
+            case "German (Austria)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Lukas (Male)", "Lukas"));
+            }
+            case "German (Germany)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Hanna (Female)", "Hanna"));
+                selectVoiceBox.addItem(new BoxItem("Lina (Female)", "Lina"));
+                selectVoiceBox.addItem(new BoxItem("Jonas (Male)", "Jonas"));
+            }
+            case "German (Switzerland)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Tim (Male)", "Tim"));
+            }
+            case "Greek" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Neo (Male)", "Neo"));
+            }
+            case "Hungarian" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Mate (Male)", "Mate"));
+            }
+            case "Korean" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Nari (Female)", "Nari"));
+            }
+            case "Italian" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Bria (Female)", "Bria"));
+                selectVoiceBox.addItem(new BoxItem("Mia (Female)", "Mia"));
+                selectVoiceBox.addItem(new BoxItem("Pietro (Male)", "Pietro"));
+            }
+            case "Japanese" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Hina (Female)", "Hina"));
+                selectVoiceBox.addItem(new BoxItem("Airi (Female)", "Airi"));
+                selectVoiceBox.addItem(new BoxItem("Fumi (Female)", "Fumi"));
+                selectVoiceBox.addItem(new BoxItem("Akira (Male)", "Akira"));
+            }
+            case "Polish" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Julia (Female)", "Julia"));
+                selectVoiceBox.addItem(new BoxItem("Jan (Male)", "Jan"));
+            }
+            case "Portuguese (Brazil)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Marcia (Female)", "Marcia"));
+                selectVoiceBox.addItem(new BoxItem("Ligia (Female)", "Ligia"));
+                selectVoiceBox.addItem(new BoxItem("Yara (Female)", "Yara"));
+                selectVoiceBox.addItem(new BoxItem("Dinis (Male)", "Dinis"));
+            }
+            case "Portuguese (Portugal)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Leonor (Female)", "Leonor"));
+            }
+            case "Russian" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Olga (Female)", "Olga"));
+                selectVoiceBox.addItem(new BoxItem("Marina (Female)", "Marina"));
+                selectVoiceBox.addItem(new BoxItem("Peter (Male)", "Peter"));
+            }
+            case "Slovenian" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Vid (Male)", "Vid"));
+            }
+            case "Spanish (Mexico)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Juana (Female)", "Juana"));
+                selectVoiceBox.addItem(new BoxItem("Silvia (Female)", "Silvia"));
+                selectVoiceBox.addItem(new BoxItem("Teresa (Female)", "Teresa"));
+                selectVoiceBox.addItem(new BoxItem("Jose (Male)", "Jose"));
+            }
+            case "Spanish (Spain)" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Camila (Female)", "Camila"));
+                selectVoiceBox.addItem(new BoxItem("Sofia (Female)", "Sofia"));
+                selectVoiceBox.addItem(new BoxItem("Luna (Female)", "Luna"));
+                selectVoiceBox.addItem(new BoxItem("Diego (Male)", "Diego"));
+            }
+            case "Swedish" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Molly (Female)", "Molly"));
+                selectVoiceBox.addItem(new BoxItem("Hugo (Male)", "Hugo"));
+            }
+            case "Turkish" -> {
+                selectVoiceBox.removeAllItems();
+                selectVoiceBox.addItem(new BoxItem("Omer (Male)", "Omer"));
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void identifyLanguage() {
+        // Verify that textAreaOpt is not empty.
+        if (!textAreaOpt.getText().equals("")) {
+            DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
+            DetectLanguageObject detectLanguageObject = detectLanguageHandler.identifyLanguage(textAreaOpt.getText());
+
+            // If language detection errorred on processing.
+            if (detectLanguageObject.isErrorOnProcessing()) {
+                openLanguageIdentificationFailedDialog();
+            } else {
+                String languageResult = detectLanguageObject.getLanguage();
+
+                // If language is unsupported.
+                if (languageResult.equals("Unsupported language.")) {
+                    setStatusOptLabel("This language is not currently supported for identification.");
+                } else {
+                    setStatusOptLabel("Language identified as: " + languageResult + ". Confidence for correct " +
+                            "identification: " + detectLanguageObject.getReliable());
+                }
+            }
+        }
     }
 
     private void openUnsupportedFileDialog() {
@@ -476,6 +877,10 @@ public class GUI extends JFrame {
                 + ocrObject.getOcrExitCode() + "\n" + ocrObject.getErrorDetails(), "OCR API: Processing error", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    private void openLanguageIdentificationFailedDialog() {
+        JOptionPane.showMessageDialog(this, "Could not identify the language of the text.\n",
+                "Language Detection failed", JOptionPane.INFORMATION_MESSAGE);
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

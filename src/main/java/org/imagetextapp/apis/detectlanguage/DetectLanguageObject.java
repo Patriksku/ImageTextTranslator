@@ -9,17 +9,21 @@ public class DetectLanguageObject {
     private boolean isReliable = false;
     private float confidence = 0f;
     private boolean errorOnProcessing = false;
+    private DetectLanguageMapper languageMapper = new DetectLanguageMapper();
 
     public String getLanguage() {
-        return language;
+        return languageMapper.getLanguage(language);
     }
 
     public void setLanguage(String language) {
         this.language = language;
     }
 
-    public boolean isReliable() {
-        return isReliable;
+    public String getReliable() {
+        if (isReliable) {
+            return "High.";
+        }
+        return "Low.";
     }
 
     public void setReliable(boolean reliable) {
