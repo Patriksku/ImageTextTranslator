@@ -3,12 +3,12 @@ package org.imagetextapp.gui;
 /**
  * Object representation of a JComboBox item with key-value mapping.
  */
-public class TextGenerationBoxItem {
+public class BoxItem {
 
     private String key;
     private String value;
 
-    public TextGenerationBoxItem(String key, String value) {
+    public BoxItem(String key, String value) {
         this.key = key;
         this.value = value;
     }

@@ -5,6 +5,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.function.Function;
 
 /**
  * Performs various operations on strings.
@@ -92,6 +95,28 @@ public class StringManager {
     public String getAppXForm(String toTranslate, String target) {
         return "q=" + toTranslate + "&" +
                 "target=" + target;
+    }
+
+    /**
+     * From @MarkusWeninger:
+     * - https://stackoverflow.com/questions/7528045/large-string-split-into-lines-with-maximum-length-in-java
+     * @param text to be split into several rows/lines.
+     * @param maxLength of each row
+     * @return split string as specified by the parameters.
+     */
+    public String getSplitLongString(String text, int maxLength) {
+        String splitter = " ";
+
+        return Arrays.stream(text.split(splitter))
+                .collect(
+                        ArrayList<String>::new,
+                        (l, s) -> {
+                            Function<ArrayList<String>, Integer> id = list -> list.size() - 1;
+                            if(l.size() == 0 || (l.get(id.apply(l)).length() != 0 && l.get(id.apply(l)).length() + s.length() >= maxLength)) l.add("");
+                            l.set(id.apply(l), l.get(id.apply(l)) + (l.get(id.apply(l)).length() == 0 ? "" : splitter) + s);
+                        },
+                        ArrayList::addAll)
+                .stream().reduce((s1, s2) -> s1 + "\n" + s2).get();
     }
 
 
