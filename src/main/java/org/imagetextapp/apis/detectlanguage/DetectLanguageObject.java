@@ -1,5 +1,7 @@
 package org.imagetextapp.apis.detectlanguage;
 
+import org.imagetextapp.utility.LanguageCodeMapper;
+
 /**
  * Object representation of the JSON response from the Detect Language API.
  */
@@ -9,10 +11,13 @@ public class DetectLanguageObject {
     private boolean isReliable = false;
     private float confidence = 0f;
     private boolean errorOnProcessing = false;
-    private DetectLanguageMapper languageMapper = new DetectLanguageMapper();
+    private LanguageCodeMapper languageCodeMapper = new LanguageCodeMapper();
 
-    public String getLanguage() {
-        return languageMapper.getLanguage(language);
+    public String getLanguage(boolean useMapper) {
+        if (useMapper) {
+            return languageCodeMapper.getFullDetectedLanguage(language);
+        }
+        return language;
     }
 
     public void setLanguage(String language) {

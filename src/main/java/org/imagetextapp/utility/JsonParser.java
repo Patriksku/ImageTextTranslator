@@ -3,6 +3,7 @@ package org.imagetextapp.utility;
 import org.imagetextapp.apis.detectlanguage.DetectLanguageObject;
 import org.imagetextapp.apis.ocr.OCRObject;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.http.HttpResponse;
@@ -91,8 +92,15 @@ public class JsonParser {
     public String parseTranslateResponse(HttpResponse<String> response) {
         String jsonString = response.body();
         JSONObject parsedResObject = new JSONObject(jsonString);
-        JSONObject dataObject = parsedResObject.getJSONObject("data");
-        JSONArray translationsArray = dataObject.getJSONArray("translations");
+        JSONObject dataObject;
+        JSONArray translationsArray;
+        try {
+            dataObject = parsedResObject.getJSONObject("data");
+            translationsArray = dataObject.getJSONArray("translations");
+        } catch (JSONException e) {
+            System.out.println(parsedResObject.getString("message"));
+            return parsedResObject.getString("message");
+        }
 
         // If Translate server response indicates that an error occurred.
         if (translationsArray.getJSONObject(0).getString("translatedText").equals("")) {

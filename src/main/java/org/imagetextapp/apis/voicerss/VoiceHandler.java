@@ -24,7 +24,7 @@ public class VoiceHandler {
      * @param speechVoice name of the reader
      * @param text to be read
      */
-    public void voiceFormData(String language, String speechVoice, String text) {
+    public boolean voiceFormData(String language, String speechVoice, String text) {
         MultiPartBody multiPartBody;
 
         multiPartBody = new MultiPartBody()
@@ -47,14 +47,16 @@ public class VoiceHandler {
         // Write decoded bytes from the returned voice to a .wav file.
         FileOutputStream fos;
         try {
-            fos = new FileOutputStream("voice.wav");
+            fos = new FileOutputStream("generated_voice/voice.wav");
             fos.write(decodedVoiceBytes, 0, decodedVoiceBytes.length);
             fos.flush();
             fos.close();
         } catch (IOException e) {
             System.out.println("An error occurred while trying to decode Base64 voice to .wav file.");
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 
     public static void main(String[] args) {

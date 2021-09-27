@@ -4,19 +4,26 @@ import org.imagetextapp.apis.detectlanguage.DetectLanguageHandler;
 import org.imagetextapp.apis.detectlanguage.DetectLanguageObject;
 import org.imagetextapp.apis.ocr.OCRHandler;
 import org.imagetextapp.apis.ocr.OCRObject;
+import org.imagetextapp.apis.translate.TranslateHandler;
+import org.imagetextapp.apis.voicerss.VoiceHandler;
+import org.imagetextapp.utility.LanguageCodeMapper;
 import org.imagetextapp.utility.MimeManager;
 import org.imagetextapp.utility.StringManager;
 
+import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -46,7 +53,7 @@ public class GUI extends JFrame {
     private JLabel statusLabelOpt;
     private JRadioButton retainLayoutRadioButtonOpt;
     private JRadioButton standardLayoutRadioButtonOpt;
-    private JButton saveVoiceButton;
+    private JButton saveTextOptButton;
     private JButton copyTextOptButton;
     private JComboBox<BoxItem> translateFromBox;
     private JComboBox<BoxItem> translateToBox;
@@ -61,10 +68,17 @@ public class GUI extends JFrame {
     private JButton generateVoiceButton;
     private JButton playVoiceButton;
     private JButton stopVoiceButton;
+    private JButton saveVoiceButton;
 
     private String userFilePathInput = "";
+    private String userMarkedTextAreaOpt = null;
+    private String retainLayoutOpt = "";
+    private String standardLayoutOpt = "";
     private File selectedFile;
     private OCRObject ocrObject;
+    private Clip AUDIO_CLIP;
+
+    private boolean TRANSLATED = false;
     private static final int FILE_SIZE_LIMIT = 1024;
 
     /**
@@ -113,11 +127,11 @@ public class GUI extends JFrame {
         );
 
         fileLinkRadioButton.addActionListener(e ->
-                fileButton.setVisible(false)
+                fileButton.setEnabled(false)
         );
 
         localFileRadioButton.addActionListener(e ->
-                fileButton.setVisible(true)
+                fileButton.setEnabled(true)
         );
 
         unknownCheckBox.addActionListener(e ->
@@ -125,11 +139,19 @@ public class GUI extends JFrame {
         );
 
         standardLayoutRadioButton.addActionListener(e ->
-                provideGeneratedText(ocrObject)
+                textArea.setText(ocrObject.getParsedTextClean())
         );
 
         retainLayoutRadioButton.addActionListener(e ->
-                provideGeneratedText(ocrObject)
+                textArea.setText(ocrObject.getParsedText())
+        );
+
+        standardLayoutRadioButtonOpt.addActionListener(e ->
+                textAreaOpt.setText(standardLayoutOpt)
+        );
+
+        retainLayoutRadioButtonOpt.addActionListener(e ->
+                textAreaOpt.setText(retainLayoutOpt)
         );
 
         generateTextButton.addActionListener(e ->
@@ -141,8 +163,14 @@ public class GUI extends JFrame {
         );
 
         saveTextButton.addActionListener(e ->
-                saveLocalTxtFile()
+                saveLocalTxtFile(saveTextButton)
         );
+
+        saveTextOptButton.addActionListener(e ->
+                saveLocalTxtFile(saveTextOptButton));
+
+        saveVoiceButton.addActionListener(e ->
+                saveLocalVoiceFile());
 
         unknownOptCheckBox.addActionListener(e ->
                 translateFromBox.setEnabled(!unknownOptCheckBox.isSelected())
@@ -152,12 +180,62 @@ public class GUI extends JFrame {
                 identifyLanguage()
         );
 
+        translateTextButton.addActionListener(e ->
+                translateLanguage()
+        );
+
         textLanguageBox.addActionListener(e ->
                 handleSelectVoiceBox()
         );
 
         copyTextOptButton.addActionListener(e ->
                 copyToClipboard(copyTextOptButton));
+
+        generateVoiceButton.addActionListener(e ->
+                generateVoice());
+
+        playVoiceButton.addActionListener(e ->
+                playVoice());
+
+        stopVoiceButton.addActionListener(e ->
+                stopVoice());
+
+        textAreaOpt.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+                userMarkedTextAreaOpt = textAreaOpt.getSelectedText();
+
+                if (textAreaOpt.getSelectedText() != null) {
+                    // If selected text only contains whitespaces.
+                    if (textAreaOpt.getSelectedText().trim().isEmpty()) {
+                        userMarkedTextAreaOpt = null;
+                    }
+                }
+
+                System.out.println("userMarkedTextAreaOpt is: " + userMarkedTextAreaOpt);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+
+            }
+        });
     }
 
     /**
@@ -171,6 +249,10 @@ public class GUI extends JFrame {
         ButtonGroup generatedTextOptionsGroup = new ButtonGroup();
         generatedTextOptionsGroup.add(standardLayoutRadioButton);
         generatedTextOptionsGroup.add(retainLayoutRadioButton);
+
+        ButtonGroup translationVoiceOptionsGroup = new ButtonGroup();
+        translationVoiceOptionsGroup.add(standardLayoutRadioButtonOpt);
+        translationVoiceOptionsGroup.add(retainLayoutRadioButtonOpt);
     }
 
     /**
@@ -189,9 +271,10 @@ public class GUI extends JFrame {
         generateVoiceButton.setEnabled(false);
         playVoiceButton.setEnabled(false);
         stopVoiceButton.setEnabled(false);
+        saveVoiceButton.setEnabled(false);
 
         copyTextOptButton.setEnabled(false);
-        saveVoiceButton.setEnabled(false);
+        saveTextOptButton.setEnabled(false);
     }
 
     private void enableTranslationTab() {
@@ -199,11 +282,9 @@ public class GUI extends JFrame {
         translateTextButton.setEnabled(true);
 
         generateVoiceButton.setEnabled(true);
-        playVoiceButton.setEnabled(true);
-        stopVoiceButton.setEnabled(true);
 
         copyTextOptButton.setEnabled(true);
-        saveVoiceButton.setEnabled(true);
+        saveTextOptButton.setEnabled(true);
     }
 
     /**
@@ -211,6 +292,7 @@ public class GUI extends JFrame {
      */
     private void fillDropDowns() {
         // Fill textGenerationLanguageBox with all supported languages.
+        // OCR API codes as values.
         textGenerationLanguageBox.addItem(new BoxItem("Arabic", "ara"));
         textGenerationLanguageBox.addItem(new BoxItem("Bulgarian", "bul"));
         textGenerationLanguageBox.addItem(new BoxItem("Chinese (Simplified)", "chs"));
@@ -240,6 +322,7 @@ public class GUI extends JFrame {
         textGenerationLanguageBox.setSelectedIndex(8);
 
         // Fill translateBoxes with all supported languages.
+        // Google Translate API codes as values.
         translateFromBox.addItem(new BoxItem("Arabic", "ar"));
         translateToBox.addItem(new BoxItem("Arabic", "ar"));
         translateFromBox.addItem(new BoxItem("Bulgarian", "bg"));
@@ -289,7 +372,12 @@ public class GUI extends JFrame {
         translateFromBox.addItem(new BoxItem("Turkish", "tr"));
         translateToBox.addItem(new BoxItem("Turkish", "tr"));
 
+        // Set the standard values to "English".
+        translateFromBox.setSelectedIndex(8);
+        translateToBox.setSelectedIndex(8);
+
         // Fill TextLanguageBoxes with all supported languages.
+        // VoiceRSS API codes as values.
         textLanguageBox.addItem(new BoxItem("Arabic (Egypt)", "ar-eg"));
         textLanguageBox.addItem(new BoxItem("Arabic (Saudi Arabia)", "ar-sa"));
         textLanguageBox.addItem(new BoxItem("Bulgarian", "bg-bg"));
@@ -327,6 +415,9 @@ public class GUI extends JFrame {
         textLanguageBox.addItem(new BoxItem("Spanish (Spain)", "es-es"));
         textLanguageBox.addItem(new BoxItem("Swedish", "sv-se"));
         textLanguageBox.addItem(new BoxItem("Turkish", "tr-tr"));
+
+        // Set the standard value to "English".
+        textLanguageBox.setSelectedIndex(15);
     }
 
     /**
@@ -430,6 +521,12 @@ public class GUI extends JFrame {
                             try {
                                 OCRObject ocrObject = get();
                                 System.out.println(ocrObject.toString());
+
+                                // Resets any memory of text and/or alterations made in Translation & Options tab,
+                                // As a new text-generation replaces all previous actions made in that tab.
+                                standardLayoutOpt = "";
+                                retainLayoutOpt = "";
+
                                 provideGeneratedText(ocrObject);
 
                                 if (ocrObject.isErrorOnProcessing()) {
@@ -440,6 +537,7 @@ public class GUI extends JFrame {
                                     activateCopySaveButtons();
                                     enableTranslationTab();
                                     setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
+                                    TRANSLATED = false;
                                 }
 
                             } catch (InterruptedException | ExecutionException e) {
@@ -492,14 +590,23 @@ public class GUI extends JFrame {
                 try {
                     OCRObject ocrObject = get();
                     System.out.println(ocrObject.toString());
+
+                    // Resets any memory of text and/or alterations made in Translation & Options tab,
+                    // As a new text-generation replaces all previous actions made in that tab.
+                    standardLayoutOpt = "";
+                    retainLayoutOpt = "";
+
                     provideGeneratedText(ocrObject);
 
                     if (ocrObject.isErrorOnProcessing()) {
+                        deactivateCopySaveButtons();
                         openCustomOCRErrorDialog(ocrObject);
                         resetStatusLabel();
                     } else {
                         enableTranslationTab();
+                        activateCopySaveButtons();
                         setStatusLabel("Success. Processing time: " + ocrObject.getProcessingTime() + " ms.");
+                        TRANSLATED = false;
                     }
 
                 } catch (InterruptedException | ExecutionException e) {
@@ -518,6 +625,15 @@ public class GUI extends JFrame {
      */
     private void provideGeneratedText(OCRObject ocrObject) {
         if (ocrObject != null) {
+            // Initialize both layouts in Translation & Options tab.
+            if (standardLayoutOpt.equals("")) {
+                standardLayoutOpt = ocrObject.getParsedTextClean();
+            }
+
+            if (retainLayoutOpt.equals("")) {
+                retainLayoutOpt = ocrObject.getParsedText();
+            }
+
             if (standardLayoutRadioButton.isSelected()) {
                 textArea.setText(ocrObject.getParsedTextClean());
                 textAreaOpt.setText(ocrObject.getParsedTextClean());
@@ -532,7 +648,7 @@ public class GUI extends JFrame {
      * Copies the contents of the JTextArea GUI-element in the current tab to the clipboard.
      */
     private void copyToClipboard(JButton button) {
-        if (button.getName().equals("copyTextButton")) {
+        if (button == copyTextButton) {
             Toolkit.getDefaultToolkit()
                     .getSystemClipboard()
                     .setContents(new StringSelection(textArea.getText()), null);
@@ -550,7 +666,7 @@ public class GUI extends JFrame {
      * Saves the contents of the JTextArea GUI-element to a .txt file locally, bounded by the
      * naming and directory choice of the user.
      */
-    private void saveLocalTxtFile() {
+    private void saveLocalTxtFile(JButton button) {
         JFileChooser fileChooser = new JFileChooser();
         int result = fileChooser.showSaveDialog(this);
 
@@ -573,12 +689,63 @@ public class GUI extends JFrame {
                 // in saved file.
                 JTextArea clone = new JTextArea();
                 StringManager stringManager = new StringManager();
-                clone.setText(stringManager.removeExtraNewLines(textArea.getText()));
+
+                // If save button in Generation-tab is used - save contents inside Text Generation tab to .txt file.
+                if (button == saveTextButton) {
+                    clone.setText(stringManager.removeExtraNewLines(textArea.getText()));
+
+                    // Else save contents inside Translation & Options tab to .txt file.
+                } else {
+                    // Translated texts are stored with single new rows. These can therefore be saved directly
+                    // for proper layout.
+                    if (TRANSLATED) {
+                        clone.setText(textAreaOpt.getText());
+                    } else {
+                        clone.setText(stringManager.removeExtraNewLines(textAreaOpt.getText()));
+                    }
+                }
+
                 clone.write(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
-                openSaveOKDialog();
+                openSaveTextOKDialog();
+
             } catch (IOException e) {
                 e.printStackTrace();
-                openSaveFailedDialog();
+                openSaveTextFailedDialog();
+            }
+        }
+    }
+
+    private void saveLocalVoiceFile() {
+        String pathToVoiceFile = "generated_voice/voice.wav";
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showSaveDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            if (file == null) {
+                return;
+            }
+
+            // Handle .wav extension of filename based on how the user named the file that is to be saved.
+            if (!file.getName().toLowerCase().endsWith(".wav")) {
+                file = new File(file.getParentFile(), file.getName() + ".wav");
+            } else {
+                file = new File(file.getParentFile(), file.getName());
+            }
+
+            // Saves the file to specified directory.
+            try {
+                byte[] voiceBytes = Files.readAllBytes(Paths.get(pathToVoiceFile));
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.write(voiceBytes, 0, voiceBytes.length);
+                fos.flush();
+                fos.close();
+                openSaveVoiceOKDialog();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                openSaveVoiceFailedDialog();
             }
         }
     }
@@ -613,6 +780,17 @@ public class GUI extends JFrame {
     private void deactivateCopySaveButtons() {
         copyTextButton.setEnabled(false);
         saveTextButton.setEnabled(false);
+    }
+
+    private void activateVoiceButtons() {
+        playVoiceButton.setEnabled(true);
+        saveVoiceButton.setEnabled(true);
+    }
+
+    private void deactivateVoiceButtons() {
+        playVoiceButton.setEnabled(false);
+        stopVoiceButton.setEnabled(false);
+        saveVoiceButton.setEnabled(false);
     }
 
     private void handleSelectVoiceBox() {
@@ -826,24 +1004,281 @@ public class GUI extends JFrame {
     private void identifyLanguage() {
         // Verify that textAreaOpt is not empty.
         if (!textAreaOpt.getText().equals("")) {
-            DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
-            DetectLanguageObject detectLanguageObject = detectLanguageHandler.identifyLanguage(textAreaOpt.getText());
+            setStatusOptLabel("Initializing language identification...");
 
-            // If language detection errorred on processing.
-            if (detectLanguageObject.isErrorOnProcessing()) {
-                openLanguageIdentificationFailedDialog();
-            } else {
-                String languageResult = detectLanguageObject.getLanguage();
+            // Thread for handling the server communication and safely updating GUI throughout the process.
+            SwingWorker<DetectLanguageObject, String> worker = new SwingWorker<>() {
 
-                // If language is unsupported.
-                if (languageResult.equals("Unsupported language.")) {
-                    setStatusOptLabel("This language is not currently supported for identification.");
+                @Override
+                protected DetectLanguageObject doInBackground() {
+                    DetectLanguageHandler detectLanguageHandler = new DetectLanguageHandler();
+                    DetectLanguageObject detectLanguageObject = detectLanguageHandler.identifyLanguage(textAreaOpt.getText());
+                    publish();
+                    return detectLanguageObject;
+                }
+
+                @Override
+                protected void process(List<String> chunks) {
+                    setStatusOptLabel("Identifying the language...");
+                }
+
+                @Override
+                protected void done() {
+                    DetectLanguageObject detectLanguageObject;
+                    try {
+                        detectLanguageObject = get();
+                        // If language detection errorred on processing.
+                        if (detectLanguageObject.isErrorOnProcessing()) {
+                            openLanguageIdentificationFailedDialog();
+                            resetStatusOptLabel();
+                        } else {
+                            String languageResult = detectLanguageObject.getLanguage(true);
+
+                            // If language is unsupported.
+                            if (languageResult.equals("Unsupported language.")) {
+                                setStatusOptLabel("This language is not currently supported for identification.");
+                            } else {
+                                setStatusOptLabel("Language identified as: " + languageResult + ". Confidence for correct " +
+                                        "identification: " + detectLanguageObject.getReliable());
+
+                                fillBoxesAsIdentifiedLanguage(detectLanguageObject.getLanguage(false));
+                            }
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+
+            // Execute thread.
+            worker.execute();
+        }
+    }
+
+    private void translateLanguage() {
+        TranslateHandler translateHandler = new TranslateHandler();
+
+        setStatusOptLabel("Translating text...");
+
+        SwingWorker<String, String> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() {
+
+                // If source language is unknown.
+                if (unknownOptCheckBox.isSelected()) {
+                    BoxItem translateTo = (BoxItem) translateToBox.getSelectedItem();
+                    assert translateTo != null;
+
+                    return translateHandler.translateText(textAreaOpt.getText(), translateTo.getValue());
+
+                    // Translate with specified source language as well.
                 } else {
-                    setStatusOptLabel("Language identified as: " + languageResult + ". Confidence for correct " +
-                            "identification: " + detectLanguageObject.getReliable());
+                    BoxItem translateFrom = (BoxItem) translateFromBox.getSelectedItem();
+                    BoxItem translateTo = (BoxItem) translateToBox.getSelectedItem();
+                    assert translateTo != null;
+                    assert translateFrom != null;
+
+                    return translateHandler.translateText(textAreaOpt.getText(), translateTo.getValue(), translateFrom.getValue());
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    createLayoutsForTranslation(get());
+                    textAreaOpt.setText(retainLayoutOpt);
+                    setStatusOptLabel("Text translated.");
+                    TRANSLATED = true;
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                    resetStatusOptLabel();
+                }
+            }
+        };
+
+        worker.execute();
+
+    }
+
+    private void createLayoutsForTranslation(String translatedText) {
+        StringManager stringManager = new StringManager();
+        retainLayoutOpt = stringManager.getSplitLongString(translatedText, 75);
+        standardLayoutOpt = translatedText;
+    }
+
+    private void fillBoxesAsIdentifiedLanguage(String detectLanguageCode) {
+        LanguageCodeMapper languageCodeMapper = new LanguageCodeMapper();
+
+        // Get the VoiceRSS language code of the detected language.
+        String voiceCode = languageCodeMapper.getDetectLanguageToVoiceCode(detectLanguageCode);
+
+        if (voiceCode.equals("Unsupported Code Conversion.")) {
+            System.out.println("Unsupported Language Code Conversion from DetectLanguage code to VoiceRSS code.");
+        } else {
+
+            // Find and select the detected language in textLanguageBox.
+            int size = textLanguageBox.getItemCount();
+            for (int i = 0; i < size; i++) {
+                BoxItem boxItem = textLanguageBox.getItemAt(i);
+                if (boxItem.getValue().equals(voiceCode)) {
+                    textLanguageBox.setSelectedIndex(i);
+                    break;
                 }
             }
         }
+
+        // Get the Google Translate language code of the detected language.
+        String translateCode = languageCodeMapper.getDetectLanguageToTranslateCode(detectLanguageCode);
+
+        if (translateCode.equals("Unsupported Code Conversion.")) {
+            System.out.println("Unsupported Language Code Conversion from DetectLanguage code to Google Translate code.");
+        } else {
+
+            // Find and select the detected language in translateFromBox.
+            int size = translateFromBox.getItemCount();
+            for (int i = 0; i < size; i++) {
+                BoxItem boxItem = translateFromBox.getItemAt(i);
+                if (boxItem.getValue().equals(translateCode)) {
+                    translateFromBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void generateVoice() {
+        setStatusOptLabel("Generating voice for text...");
+
+        // If user has selected a specific part to be generated to voice.
+        SwingWorker<Boolean, String> worker;
+        if (userMarkedTextAreaOpt != null) {
+            worker = new SwingWorker<>() {
+
+                @Override
+                protected Boolean doInBackground() {
+                    VoiceHandler voiceHandler = new VoiceHandler();
+                    BoxItem selectedLanguage = (BoxItem) textLanguageBox.getSelectedItem();
+                    BoxItem selectedVoice = (BoxItem) selectVoiceBox.getSelectedItem();
+                    assert selectedLanguage != null;
+                    assert selectedVoice != null;
+                    return voiceHandler.voiceFormData(selectedLanguage.getValue(), selectedVoice.getValue(), userMarkedTextAreaOpt);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        boolean success = get();
+                        if (success) {
+                            activateVoiceButtons();
+                            setStatusOptLabel("Successfully generated voice for text.");
+                        } else {
+                            deactivateVoiceButtons();
+                            openVoiceGenerationFailedDialog();
+                            resetStatusOptLabel();
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                        resetStatusOptLabel();
+                    }
+                }
+            };
+
+            // Execute thread.
+
+            // If user has not selected a specific part to be generated to voice.
+        } else {
+            worker = new SwingWorker<>() {
+
+                @Override
+                protected Boolean doInBackground() {
+                    VoiceHandler voiceHandler = new VoiceHandler();
+                    BoxItem selectedLanguage = (BoxItem) textLanguageBox.getSelectedItem();
+                    BoxItem selectedVoice = (BoxItem) selectVoiceBox.getSelectedItem();
+                    assert selectedLanguage != null;
+                    assert selectedVoice != null;
+                    return voiceHandler.voiceFormData(selectedLanguage.getValue(), selectedVoice.getValue(), textAreaOpt.getText());
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        boolean success = get();
+                        if (success) {
+                            activateVoiceButtons();
+                            setStatusOptLabel("Successfully generated voice for text.");
+                        } else {
+                            deactivateVoiceButtons();
+                            openVoiceGenerationFailedDialog();
+                            resetStatusOptLabel();
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+
+            // Execute thread.
+        }
+        worker.execute();
+    }
+
+    private void playVoice() {
+
+        setStatusOptLabel("Playing voice...");
+
+        SwingWorker<Clip, String> worker = new SwingWorker<>() {
+            final String voiceFile = "generated_voice/voice.wav";
+            File file;
+            Clip clip = null;
+
+            @Override
+            protected Clip doInBackground() {
+                try {
+                    file = new File(voiceFile);
+                    AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(file);
+                    clip = AudioSystem.getClip();
+                    clip.open(audioInputStream);
+
+                    AUDIO_CLIP = clip;
+                    assert clip != null;
+
+                    clip.setFramePosition(0);
+                    clip.start();
+
+                    playVoiceButton.setEnabled(false);
+                    stopVoiceButton.setEnabled(true);
+                } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+                    e.printStackTrace();
+                }
+                return clip;
+            }
+
+            @Override
+            protected void done() {
+                setStatusOptLabel("Played voice.");
+            }
+        };
+
+        worker.execute();
+    }
+
+    private void stopVoice() {
+        setStatusOptLabel("Stopped Voice.");
+        SwingWorker<String, String> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() {
+                playVoiceButton.setEnabled(true);
+                stopVoiceButton.setEnabled(false);
+
+                if (AUDIO_CLIP != null && AUDIO_CLIP.isActive()) {
+                    AUDIO_CLIP.stop();
+                    AUDIO_CLIP.close();
+                }
+                return null;
+            }
+        };
+
+        worker.execute();
     }
 
     private void openUnsupportedFileDialog() {
@@ -862,14 +1297,24 @@ public class GUI extends JFrame {
                 "generating text from file. \nPlease choose a smaller file.", "Too large file", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void openSaveOKDialog() {
+    private void openSaveTextOKDialog() {
         JOptionPane.showMessageDialog(this, "File (.txt) successfully saved to specified directory.",
-                "Save: Success", JOptionPane.INFORMATION_MESSAGE);
+                "Save .txt: Success", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void openSaveFailedDialog() {
+    private void openSaveTextFailedDialog() {
         JOptionPane.showMessageDialog(this, "File (.txt) could not be saved. Try again without adding any extensions to the file name.",
-                "Save: Failed", JOptionPane.INFORMATION_MESSAGE);
+                "Save .txt: Failed", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void openSaveVoiceOKDialog() {
+        JOptionPane.showMessageDialog(this, "File (.wav) successfully saved to specified directory.",
+                "Save .wav: Success", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void openSaveVoiceFailedDialog() {
+        JOptionPane.showMessageDialog(this, "File (.wav) could not be saved. Try again without adding any extensions to the file name.",
+                "Save .wav: Failed", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void openCustomOCRErrorDialog(OCRObject ocrObject) {
@@ -880,6 +1325,13 @@ public class GUI extends JFrame {
     private void openLanguageIdentificationFailedDialog() {
         JOptionPane.showMessageDialog(this, "Could not identify the language of the text.\n",
                 "Language Detection failed", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void openVoiceGenerationFailedDialog() {
+        JOptionPane.showMessageDialog(this, "Could not generate voice for the text.\n" +
+                        "The voice generation service might be unavailble at this moment, or you might have made an " +
+                        "invalid selection of the text to generate voice from.",
+                "Voice Generation failed", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static void main(String[] args) {
