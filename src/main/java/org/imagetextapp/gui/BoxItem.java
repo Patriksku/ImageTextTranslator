@@ -5,8 +5,8 @@ package org.imagetextapp.gui;
  */
 public class BoxItem {
 
-    private String key;
-    private String value;
+    private final String key;
+    private final String value;
 
     public BoxItem(String key, String value) {
         this.key = key;

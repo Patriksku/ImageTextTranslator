@@ -24,8 +24,6 @@ public class DetectLanguageHandler {
         // Make the DetectLanguage request.
         ConnectionManager connectionManager = new ConnectionManager();
         HttpResponse<String> response = connectionManager.makeDetectLanguageRequest(query);
-        System.out.println("StatusCode of DetectLanguage request: " + response.statusCode());
-        System.out.println("Body of DetectLanguage Request: " + response.body());
 
         // Parse response to object.
         JsonParser jsonParser = new JsonParser();

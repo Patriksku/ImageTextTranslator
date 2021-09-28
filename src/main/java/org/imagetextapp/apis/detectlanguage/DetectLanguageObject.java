@@ -11,7 +11,7 @@ public class DetectLanguageObject {
     private boolean isReliable = false;
     private float confidence = 0f;
     private boolean errorOnProcessing = false;
-    private LanguageCodeMapper languageCodeMapper = new LanguageCodeMapper();
+    private final LanguageCodeMapper languageCodeMapper = new LanguageCodeMapper();
 
     public String getLanguage(boolean useMapper) {
         if (useMapper) {
