@@ -2,8 +2,9 @@ package org.imagetextapp.utility;
 
 import org.imagetextapp.apis.detectlanguage.DetectLanguageObject;
 import org.imagetextapp.apis.ocr.OCRObject;
+import org.imagetextapp.apis.translate.TranslateHandler;
+import org.imagetextapp.apis.translate.TranslateObject;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.http.HttpResponse;
@@ -14,7 +15,7 @@ import java.net.http.HttpResponse;
 public class JsonParser {
 
     /**
-     *
+     * Parses the JSON response from the OCR API.
      * @param response JSON response from the OCR API.
      * @return object representation of the response.
      */
@@ -56,7 +57,7 @@ public class JsonParser {
     }
 
     /**
-     *
+     * Parses the JSON response from the Detect Language API.
      * @param response JSON response from the Detect Language API.
      * @return object representation of the response.
      */
@@ -85,30 +86,28 @@ public class JsonParser {
     }
 
     /**
-     *
-     * @param response JSON response from Google Translate API.
-     * @return translated text.
+     * Parses JSON response from the Google Translate API.
+     * @param response JSON response from the Google Translate API.
+     * @return object representation of the response.
      */
-    public String parseTranslateResponse(HttpResponse<String> response) {
+    public TranslateObject parseTranslateResponse(HttpResponse<String> response) {
+        TranslateObject translateObject = new TranslateObject();
+
         String jsonString = response.body();
         JSONObject parsedResObject = new JSONObject(jsonString);
-        JSONObject dataObject;
-        JSONArray translationsArray;
-        try {
-            dataObject = parsedResObject.getJSONObject("data");
-            translationsArray = dataObject.getJSONArray("translations");
-        } catch (JSONException e) {
-            System.out.println(parsedResObject.getString("message"));
-            return parsedResObject.getString("message");
-        }
+        JSONObject dataObject = parsedResObject.getJSONObject("data");
+
 
         // If Translate server response indicates that an error occurred.
-        if (translationsArray.getJSONObject(0).getString("translatedText").equals("")) {
-            System.out.println("An error occurred while trying to process the Translate request.");
-            System.out.println("Make sure that the text is not empty.");
-            return "";
+        if (!parsedResObject.getString("message").equals("")) {
+            System.out.println("The following message was logged during the last Google Translate request: ");
+            System.out.println(parsedResObject.getString("message"));
+            translateObject.setErrorOnProcessing(true);
+            translateObject.setMessage(parsedResObject.getString("message"));
         }
 
-        return translationsArray.getJSONObject(0).getString("translatedText");
+        translateObject.setText(dataObject.getString("translation").replace("&quot", "\""));
+
+        return translateObject;
     }
 }

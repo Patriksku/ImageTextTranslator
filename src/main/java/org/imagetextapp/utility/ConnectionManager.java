@@ -1,9 +1,7 @@
 package org.imagetextapp.utility;
 
-import javax.sound.sampled.*;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -75,7 +73,7 @@ public class ConnectionManager {
      * @return response from the Translate API.
      */
     public HttpResponse<String> makeTranslateRequest(String query) {
-        final String TRANSLATE_URL = "https://google-translate1.p.rapidapi.com/language/translate/v2";
+        final String TRANSLATE_URL = "https://google-translate20.p.rapidapi.com/translate";
 
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = null;
@@ -83,8 +81,8 @@ public class ConnectionManager {
         HttpRequest request = HttpRequest.newBuilder()
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept-Encoding", "application/gzip")
-                .header("x-rapidapi-key", PropertiesReader.getProperty("X-RAPIDAPI-KEY"))
-                .header("x-rapidapi-host", PropertiesReader.getProperty("X-RAPIDAPI-HOST"))
+                .header("x-rapidapi-key", PropertiesReader.getProperty("X_RAPIDAPI_KEY"))
+                .header("x-rapidapi-host", PropertiesReader.getProperty("X_RAPIDAPI_HOST"))
                 .header("useQueryString", "true")
                 .uri(URI.create(TRANSLATE_URL))
                 .POST(HttpRequest.BodyPublishers.ofString(query))

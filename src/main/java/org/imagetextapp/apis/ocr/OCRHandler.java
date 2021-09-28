@@ -39,8 +39,6 @@ public class OCRHandler {
         // Make the OCR request.
         ConnectionManager connectionManager = new ConnectionManager();
         HttpResponse<String> response = connectionManager.makeOCRRequest(multiPartBody);
-        System.out.println("StatusCode of OCR request: " + response.statusCode());
-        System.out.println("Body of OCR Request: " + response.body());
 
         // Parse response to object.
         JsonParser jsonParser = new JsonParser();
@@ -75,8 +73,6 @@ public class OCRHandler {
         // Make the OCR request.
         ConnectionManager connectionManager = new ConnectionManager();
         HttpResponse<String> response = connectionManager.makeOCRRequest(multiPartBody);
-        System.out.println("StatusCode of OCR request: " + response.statusCode());
-        System.out.println("Body of OCR Request: " + response.body());
 
         // Parse response to object.
         JsonParser jsonParser = new JsonParser();

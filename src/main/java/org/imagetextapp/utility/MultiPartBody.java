@@ -1,8 +1,5 @@
 package org.imagetextapp.utility;
 
-import org.imagetextapp.apis.detectlanguage.DetectLanguageHandler;
-import org.imagetextapp.apis.ocr.OCRHandler;
-import org.imagetextapp.apis.ocr.OCRObject;
 import org.imagetextapp.apis.translate.TranslateHandler;
 
 import java.io.IOException;
@@ -12,7 +9,6 @@ import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -172,11 +168,5 @@ public class MultiPartBody {
                 }
             }
         }
-    }
-
-    public static void main(String[] args) {
-
-        TranslateHandler translateHandler = new TranslateHandler();
-        translateHandler.translateText("Hello, world!", "es");
     }
 }
