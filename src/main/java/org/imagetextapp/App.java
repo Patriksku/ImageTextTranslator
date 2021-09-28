@@ -19,6 +19,5 @@ public class App {
         // Start the program.
         controller.initializeApplication();
         });
-//        System.out.println(System.getProperty("java.class.path"));
     }
 }
