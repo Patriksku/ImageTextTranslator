@@ -1,6 +1,6 @@
 # ImageTextTranslator
 
-**ImageTextTranslator** is a hobby project with the purpose of providing some neat functionalities that are based on text-containing images. You can for instance feed the application with a photo that you have taken of a book page and generate that text on your computer. Once you have generated your text, you can also choose to translate the text to another language. The text-to-speech functionality allows for playing a piece of audio that reads out the text in different languages and voices. Finally, it is also possible to save the generated text as a .txt file, or to save the audio as a .wav file on your computer.
+**ImageTextTranslator** is a hobby project with the purpose of providing some neat functionalities that are based on text-containing images. You can for instance feed the application with a photo that you have taken of a book page and generate that text on your computer. Once you have generated your text, you can also choose to translate the text to another language. The text-to-speech functionality allows for playing a piece of audio that reads out the text (or just the marked/highlighted piece of the text) in different languages and voices. Finally, it is also possible to save the generated text as a .txt file, or to save the audio as a .wav file on your computer.
 
 
 # Functionality
