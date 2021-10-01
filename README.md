@@ -33,10 +33,10 @@ The application supports **16 different languages**:
 
 # APIs used
 
-OCR API: https://ocr.space/ocrapi
-Detect Language API: https://detectlanguage.com/documentation
-Google Translate API: https://english.api.rakuten.net/datascraper/api/google-translate20/endpoints
-Voice RSS (Text-to-speech) API: http://www.voicerss.org/api/
+- OCR API: https://ocr.space/ocrapi
+- Detect Language API: https://detectlanguage.com/documentation
+- Google Translate API: https://english.api.rakuten.net/datascraper/api/google-translate20/endpoints
+- Voice RSS (Text-to-speech) API: http://www.voicerss.org/api/
 
 # User Implementation
 
